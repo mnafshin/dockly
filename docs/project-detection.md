@@ -4,6 +4,7 @@
 It is optimized for typical single-module Spring Boot apps and common multi-module layouts — not every exotic monorepo.
 
 Structured **ProjectFacts** (confidence + evidence, plain Java vs Spring): [`project-facts.md`](project-facts.md).
+Maven/Gradle **plugin seeds**: [`plugin-facts.md`](plugin-facts.md).
 
 See also: [`extensions.md`](extensions.md) (project detector plugins), [`troubleshooting.md`](troubleshooting.md).
 

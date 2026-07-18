@@ -6,6 +6,10 @@ import org.gradle.api.Project;
 
 /**
  * Registers {@code dockly { }} extension and generate/verify tasks (build.gradle SSOT).
+ *
+ * <p><b>Implied ProjectFacts (seeded, not re-asked):</b> {@code language=java},
+ * {@code build_tool=gradle}. Remaining options come from the extension block (ADR 0010).
+ * See {@code docs/plugin-facts.md}.
  */
 public class DocklyPlugin implements Plugin<Project> {
 

@@ -62,6 +62,28 @@ class ProjectFactsTests(unittest.TestCase):
         self.assertEqual(overridden.value, 21)
         self.assertEqual(overridden.source, "config")
 
+    def test_plugin_seed_spring_boot_maven(self) -> None:
+        """Maven plugin surface: seed java+maven; detect Spring from fixture."""
+        seeded = seed_implied_facts(build_tool="maven")
+        facts = detect_project_facts(FIXTURES / "maven-only", seeded=seeded)
+        self.assertEqual(facts.language.value, "java")
+        self.assertEqual(facts.language.source, "plugin_seed")
+        self.assertEqual(facts.build_tool.value, "maven")
+        self.assertEqual(facts.build_tool.source, "plugin_seed")
+        self.assertEqual(facts.framework.value, "spring-boot")
+        self.assertEqual(facts.framework.source, "detected")
+        self.assertTrue(facts.capabilities.layered_jar.value)
+
+    def test_plugin_seed_plain_java_maven(self) -> None:
+        """Maven plugin surface: seed java+maven; detect plain-java from fixture."""
+        seeded = seed_implied_facts(build_tool="maven")
+        facts = detect_project_facts(FIXTURES / "plain-java-maven", seeded=seeded)
+        self.assertEqual(facts.language.source, "plugin_seed")
+        self.assertEqual(facts.build_tool.source, "plugin_seed")
+        self.assertEqual(facts.framework.value, "plain-java")
+        self.assertEqual(facts.framework.source, "detected")
+        self.assertFalse(facts.capabilities.layered_jar.value)
+
     def test_to_dict_shape(self) -> None:
         payload = detect_project_facts(FIXTURES / "maven-only").to_dict()
         self.assertIn("framework", payload)

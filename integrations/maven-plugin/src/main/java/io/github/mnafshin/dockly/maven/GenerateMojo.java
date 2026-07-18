@@ -15,6 +15,10 @@ import org.apache.maven.project.MavenProject;
 
 /**
  * Generates a Dockerfile from POM plugin configuration (no Python, no toml).
+ *
+ * <p><b>Implied ProjectFacts (seeded, not re-asked):</b> {@code language=java},
+ * {@code build_tool=maven}. Java version, layered JAR, and recipe come from Mojo
+ * parameters / POM configuration (ADR 0010). See {@code docs/plugin-facts.md}.
  */
 @Mojo(name = "generate", defaultPhase = LifecyclePhase.GENERATE_RESOURCES, requiresProject = true, threadSafe = true)
 public class GenerateMojo extends AbstractMojo {
