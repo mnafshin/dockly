@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-`springdocker` benchmark features are focused on reproducible Docker-based comparisons and report
+`dockly` benchmark features are focused on reproducible Docker-based comparisons and report
 aggregation. The project also documents optional profiling columns, but it does not own JVM profiling
 agents or cluster-level metrics ingestion.
 

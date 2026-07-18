@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-ADR 0004 kept `samples/java-spring-docker/` in this repository as the permanent benchmark harness. That tree is a full Spring Boot 4 / Java 25 application with its own Maven/Gradle identity (`io.github.mnafshin:java-spring-docker`), benchmark CSVs, and k8s overlays. It has a different release cadence and reuse surface than the installable `springdocker` CLI.
+ADR 0004 kept `samples/java-spring-docker/` in this repository as the permanent benchmark harness. That tree is a full Spring Boot 4 / Java 25 application with its own Maven/Gradle identity (`io.github.mnafshin:java-spring-docker`), benchmark CSVs, and k8s overlays. It has a different release cadence and reuse surface than the installable `dockly` CLI.
 
 ADR 0004 already noted that extracting the workload to a separate repository could be revisited later.
 

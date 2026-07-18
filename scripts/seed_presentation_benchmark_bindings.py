@@ -99,12 +99,12 @@ DECK_CUSTOMIZATIONS: dict[Path, list[tuple[str, str]]] = {
         )],
     REPO / "docs/presentation/springdocker-features.html": [
         (
-            "<title>springdocker — Production Dockerfiles for Spring Boot, Without the Guesswork</title>",
-            "<title>springdocker — Features &amp; Workflow</title>",
+            "<title>dockly — Production Dockerfiles for Spring Boot, Without the Guesswork</title>",
+            "<title>dockly — Features &amp; Workflow</title>",
         ),
         (
             '<h1 class="hero-title">Stop <em>guessing</em>.<br/>Ship the Dockerfile<br/>your Spring Boot app <em>deserves</em>.</h1>',
-            '<h1 class="hero-title">springdocker<br/><em>features</em> &amp; workflow</h1>',
+            '<h1 class="hero-title">dockly<br/><em>features</em> &amp; workflow</h1>',
         ),
         (
             "An opinionated, explainable, benchmark‑backed Dockerfile generator for the JVM.",

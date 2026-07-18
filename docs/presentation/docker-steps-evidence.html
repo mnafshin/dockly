@@ -76,9 +76,9 @@
         <li>Build time, image size, startup to readiness endpoint</li>
         <li>p95 startup and regression checks in CI</li>
       </ul>
-      <pre><code class="language-bash" data-trim data-noescape>springdocker benchmark generate --project-root .
-springdocker benchmark run --profile full --runner-arg=--skip-native
-springdocker benchmark analyze benchmarks/01-custom-jre-jlink/results/raw.csv</code></pre>
+      <pre><code class="language-bash" data-trim data-noescape>dockly benchmark generate --project-root .
+dockly benchmark run --profile full --runner-arg=--skip-native
+dockly benchmark analyze benchmarks/01-custom-jre-jlink/results/raw.csv</code></pre>
     </section>
 
     <section>
@@ -283,7 +283,7 @@ USER 1001
         <div class="card"><h4>Native wins when</h4><p>Cold start and footprint dominate (scale-to-zero, edge, burst traffic).</p></div>
         <div class="card warn"><h4>JVM wins when</h4><p>Sustained throughput, fast iteration, and reflection-heavy stacks matter.</p></div>
       </div>
-      <p class="muted" style="margin-top: 0.8em;">springdocker generates a native scaffold Dockerfile; full native workflow is roadmap — not shipped yet.</p>
+      <p class="muted" style="margin-top: 0.8em;">dockly generates a native scaffold Dockerfile; full native workflow is roadmap — not shipped yet.</p>
       <div class="config-map">
         <div class="config-map-header">
           <span class="config-key">recipe = "native-aot"</span>
@@ -379,7 +379,7 @@ ENTRYPOINT ["java", …, "JarLauncher"]</code></pre>
     <section>
       <span class="badge bad">Policy · digest pins</span>
       <h2>pin_digests = true</h2>
-      <p class="muted">Immutable <code>@sha256:</code> on <code>FROM</code> lines — not a separate stage. Catalog: <code>src/springdocker/digest_pins.py</code></p>
+      <p class="muted">Immutable <code>@sha256:</code> on <code>FROM</code> lines — not a separate stage. Catalog: <code>src/dockly/digest_pins.py</code></p>
       <div class="config-map">
         <div class="config-map-header">
           <span class="config-key">pin_digests = true</span>
@@ -425,7 +425,7 @@ COPY --from=build /tmp/sbom/spdx.json /usr/share/sbom/spdx.json</code></pre>
 # no /usr/share/sbom/spdx.json COPY</code></pre>
           </div>
         </div>
-        <div class="config-map-foot"><code>springdocker verify --check-config-drift</code> fails if config says ON but path missing</div>
+        <div class="config-map-foot"><code>dockly verify --check-config-drift</code> fails if config says ON but path missing</div>
       </div>
     </section>
     <section>
@@ -528,11 +528,11 @@ USER root</code></pre>
         <li>Run one full-profile benchmark on a real service</li>
         <li>Adopt only changes with repeatable p95 or cost improvement</li>
       </ol>
-      <pre><code class="language-bash" data-trim data-noescape>springdocker init --project-root . --build-tool maven
-springdocker configure --project-root . --force
-springdocker dockerfile generate --project-root .
-springdocker explain --project-root . Dockerfile.generated --config-aware
-springdocker verify --project-root . Dockerfile.generated --check-config-drift</code></pre>
+      <pre><code class="language-bash" data-trim data-noescape>dockly init --project-root . --build-tool maven
+dockly configure --project-root . --force
+dockly dockerfile generate --project-root .
+dockly explain --project-root . Dockerfile.generated --config-aware
+dockly verify --project-root . Dockerfile.generated --check-config-drift</code></pre>
     </section>
   </section>
 
@@ -541,11 +541,11 @@ springdocker verify --project-root . Dockerfile.generated --check-config-drift</
     <h1>Questions?</h1>
     <p class="muted" style="margin-top: 0.8em;">Standardize policy · benchmark performance · choose deliberately</p>
     <div class="pill-row" style="margin-top: 1.2em;">
-      <span class="pill">github.com/mnafshin/springdocker</span>
+      <span class="pill">github.com/mnafshin/dockly</span>
       <span class="pill">docs/presentation/docker-steps-evidence.html</span>
       <span class="pill">samples/java-spring-docker/benchmarks/</span>
     </div>
-    <aside class="notes">Offer live demo: springdocker explain + analyze on one scenario CSV.</aside>
+    <aside class="notes">Offer live demo: dockly explain + analyze on one scenario CSV.</aside>
   </section>
 
 </div>

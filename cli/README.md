@@ -1,4 +1,4 @@
-# springdocker CLI
+# dockly CLI
 
 CLI for Spring Boot Dockerfile and benchmark workflows across Maven and Gradle projects.
 
@@ -11,41 +11,41 @@ Product scope and CI-evidenced guarantees: [`docs/POSITIONING.md`](../docs/POSIT
 ### pipx (recommended)
 
 ```bash
-pipx install springdocker
-springdocker --help
+pipx install dockly
+dockly --help
 
 # optional: benchmark run/analyze (requires Docker)
-pipx install 'springdocker[benchmark]'
+pipx install 'dockly[benchmark]'
 ```
 
 Upgrade:
 
 ```bash
-pipx upgrade springdocker
+pipx upgrade dockly
 ```
 
 ### uv
 
 ```bash
-uv tool install springdocker
-uv tool upgrade springdocker
+uv tool install dockly
+uv tool upgrade dockly
 
 # benchmark extra
-uv tool install 'springdocker[benchmark]'
+uv tool install 'dockly[benchmark]'
 ```
 
 ### pip
 
 ```bash
-python3 -m pip install springdocker
-python3 -m pip install 'springdocker[benchmark]'
+python3 -m pip install dockly
+python3 -m pip install 'dockly[benchmark]'
 ```
 
 ### From source (contributors)
 
 ```bash
-git clone https://github.com/mnafshin/springdocker.git
-cd springdocker
+git clone https://github.com/mnafshin/dockly.git
+cd dockly
 python3 -m pip install -e ".[dev]"
 ```
 
@@ -53,33 +53,33 @@ python3 -m pip install -e ".[dev]"
 
 ```bash
 cd /path/to/your-spring-boot-app   # or: export PROJECT=.
-springdocker setup --ci
-# optional: springdocker setup --verify
-# existing project: springdocker setup --ci-only
-# interactive: springdocker setup --interactive
+dockly setup --ci
+# optional: dockly setup --verify
+# existing project: dockly setup --ci-only
+# interactive: dockly setup --interactive
 
 # power-user / CI steps (same result as setup without --ci)
-springdocker doctor --project-root .
-springdocker init --project-root . --build-tool maven
-springdocker configure --project-root . --force
-springdocker dockerfile generate --project-root .
-springdocker explain --project-root . Dockerfile.generated --format json --config-aware
-springdocker verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
+dockly doctor --project-root .
+dockly init --project-root . --build-tool maven
+dockly configure --project-root . --force
+dockly dockerfile generate --project-root .
+dockly explain --project-root . Dockerfile.generated --format json --config-aware
+dockly verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
 
 # recipes
-springdocker dockerfile generate --project-root . --recipe jvm-balanced
-springdocker dockerfile generate --project-root . --recipe spring-aot
+dockly dockerfile generate --project-root . --recipe jvm-balanced
+dockly dockerfile generate --project-root . --recipe spring-aot
 # native-aot is experimental scaffold only — see docs/native-aot.md
-springdocker dockerfile generate --project-root . --recipe native-aot
+dockly dockerfile generate --project-root . --recipe native-aot
 ```
 
-**Evidence on the sample app** ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample); Java 25) — from a springdocker clone:
+**Evidence on the sample app** ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample); Java 25) — from a dockly clone:
 
 ```bash
 python scripts/checkout_sample.py
-springdocker benchmark generate --project-root samples/java-spring-docker --java-version 25
-springdocker benchmark run --project-root samples/java-spring-docker --profile quick --runner-arg --skip-native
-springdocker benchmark analyze --project-root samples/java-spring-docker \
+dockly benchmark generate --project-root samples/java-spring-docker --java-version 25
+dockly benchmark run --project-root samples/java-spring-docker --profile quick --runner-arg --skip-native
+dockly benchmark analyze --project-root samples/java-spring-docker \
   samples/java-spring-docker/benchmarks/01-custom-jre-jlink/results/raw.csv --format table
 ```
 
@@ -103,42 +103,42 @@ The generator sets `runtime_image = "distroless"` internally for JVM recipes. Th
 | `distroless` (default) | Non-root, minimal base + jlink; **no `HEALTHCHECK`** (no shell/`wget` in the image). Probe readiness from the orchestrator (e.g. Kubernetes `readinessProbe` on `/actuator/health/readiness`). |
 | `debian-slim`, `alpine`, `ubuntu`, `temurin` | Full OS or vendor JRE paths; **`HEALTHCHECK` is emitted** when Spring Boot Actuator is on the classpath. |
 
-Supported runtime names: `distroless`, `debian-slim`, `alpine`, `ubuntu`, `temurin` (plus aliases such as `debian-bookworm-slim`, `eclipse-temurin-jre`). Set via `[dockerfile].runtime_image` in `.springdocker.toml` or `--runtime-image` on `dockerfile generate`.
+Supported runtime names: `distroless`, `debian-slim`, `alpine`, `ubuntu`, `temurin` (plus aliases such as `debian-bookworm-slim`, `eclipse-temurin-jre`). Set via `[dockerfile].runtime_image` in `.dockly.toml` or `--runtime-image` on `dockerfile generate`.
 
 ## Config-first workflow
 
-`.springdocker.toml` is the **single source of truth** for Dockerfile generation (see [ADR 0005](../docs/adr/0005-config-first-dockerfile-generation.md)). Team rollout: [docs/adopt.md](../docs/adopt.md).
+`.dockly.toml` is the **single source of truth** for Dockerfile generation (see [ADR 0005](../docs/adr/0005-config-first-dockerfile-generation.md)). Team rollout: [docs/adopt.md](../docs/adopt.md).
 
 ### Command matrix
 
 | Command | Interactive? | Writes config? | Writes Dockerfile? | Typical user |
 |---|---|---|---|---|
-| `springdocker setup` | No (optional `--interactive`) | Yes (`production-balanced` by default) | Yes | First-time onboarding (`--ci` writes GitHub workflow) |
-| `springdocker setup --ci-only` | No | No | No (writes workflow) | Add SSOT gate to an existing service |
-| `springdocker init` | No | Yes (skeleton) | No | Platform / first checkout |
-| `springdocker init --interactive` | Yes (via configure) | Yes | No | New service bootstrap |
-| `springdocker configure` | Yes | Yes (`[dockerfile]`) | Optional (`--generate`) | Strategy changes |
-| `springdocker dockerfile generate` | No | No | Yes | Daily dev + CI |
-| `springdocker explain --config-aware` | No | No | No | Audit / review (advisory — not a CI gate) |
-| `springdocker verify --check-config-drift` | No | No | No | CI SSOT gate (pass/fail) |
+| `dockly setup` | No (optional `--interactive`) | Yes (`production-balanced` by default) | Yes | First-time onboarding (`--ci` writes GitHub workflow) |
+| `dockly setup --ci-only` | No | No | No (writes workflow) | Add SSOT gate to an existing service |
+| `dockly init` | No | Yes (skeleton) | No | Platform / first checkout |
+| `dockly init --interactive` | Yes (via configure) | Yes | No | New service bootstrap |
+| `dockly configure` | Yes | Yes (`[dockerfile]`) | Optional (`--generate`) | Strategy changes |
+| `dockly dockerfile generate` | No | No | Yes | Daily dev + CI |
+| `dockly explain --config-aware` | No | No | No | Audit / review (advisory — not a CI gate) |
+| `dockly verify --check-config-drift` | No | No | No | CI SSOT gate (pass/fail) |
 
 ### Precedence
 
 | Priority | Source |
 |---:|---|
 | 1 | CLI flags on `dockerfile generate` |
-| 2 | Project `.springdocker.toml` |
+| 2 | Project `.dockly.toml` |
 | 3 | Built-in defaults |
 
-Org policy (`SPRINGDOCKER_POLICY`) is planned ([#123](https://github.com/mnafshin/springdocker/issues/123)); not required today.
+Org policy (`SPRINGDOCKER_POLICY`) is planned ([#123](https://github.com/mnafshin/dockly/issues/123)); not required today.
 
 | Command | Purpose |
 |---|---|
-| `springdocker setup` | One-shot detect → write config → generate Dockerfile (`--ci` adds GitHub Action workflow) |
-| `springdocker setup --ci-only` | Write `.github/workflows/dockerfile.yml` only |
-| `springdocker configure` | Interactive wizard that writes/updates `[dockerfile]` in config |
-| `springdocker init --interactive` | Create config skeleton, then run configure |
-| `springdocker dockerfile generate` | Deterministic generate from config (CI-safe, no prompts) |
+| `dockly setup` | One-shot detect → write config → generate Dockerfile (`--ci` adds GitHub Action workflow) |
+| `dockly setup --ci-only` | Write `.github/workflows/dockerfile.yml` only |
+| `dockly configure` | Interactive wizard that writes/updates `[dockerfile]` in config |
+| `dockly init --interactive` | Create config skeleton, then run configure |
+| `dockly dockerfile generate` | Deterministic generate from config (CI-safe, no prompts) |
 
 Profiles (`production-balanced`, `smallest-image`, `fast-cold-start`, `build-speed`, `simplest`, `compliance`, `custom`) are selected in `setup --profile` / `configure` and expanded to explicit options in config.
 
@@ -157,7 +157,7 @@ Every `[dockerfile]` key is overridable from the CLI except file-backed keys (`m
 Example one-off CI override:
 
 ```bash
-springdocker dockerfile generate \
+dockly dockerfile generate \
   --project-root samples/java-spring-docker \
   --runtime-image alpine \
   --no-use-jlink \
@@ -171,12 +171,12 @@ The `dockerfile generate` `--help` output groups flags under **runtime**, **buil
 
 The `04-native-benchmark` scenario is generated with the `native-aot` scaffold recipe. The internal benchmark runner skips native scenarios by default (`--skip-native`).
 
-## Config file (`.springdocker.toml`)
+## Config file (`.dockly.toml`)
 
 All command resolvers use precedence:
 
 1. CLI flags
-2. `.springdocker.toml`
+2. `.dockly.toml`
 3. defaults
 
 Example:
@@ -192,7 +192,7 @@ build_tool = "maven"
 output = "Dockerfile.generated"
 java_version = 17
 recipe = "jvm-balanced"
-# profile = "production-balanced"  # set by `springdocker configure`
+# profile = "production-balanced"  # set by `dockly configure`
 # runtime_image = "distroless"
 # use_jlink = true
 # enable_appcds = true  # available on Java 17+
@@ -220,11 +220,11 @@ normalized_runtime = true
 legacy_scripts = false
 ```
 
-When `dockerfile.must_have_modules_file` is set, springdocker reads modules from that file
+When `dockerfile.must_have_modules_file` is set, dockly reads modules from that file
 (`must-have.txt` style, one module per line, `#` comments allowed) and injects them into
 the jlink module list for reflection/dynamic-loading edge cases.
 
-When jlink is enabled, springdocker auto-merges **jlink baseline modules** when Spring Web starters
+When jlink is enabled, dockly auto-merges **jlink baseline modules** when Spring Web starters
 are detected (`spring-boot-starter-web`, `spring-boot-starter-webflux`, `spring-boot-starter-websocket`):
 
 - `java.desktop` — JavaBeans and desktop-related APIs used by parts of the Spring Web stack
@@ -232,7 +232,7 @@ are detected (`spring-boot-starter-web`, `spring-boot-starter-webflux`, `spring-
 - `java.naming` — JNDI lookups that jdeps often misses on web apps
 
 Non-web Spring Boot workloads get **no** auto baseline — use jdeps plus `must_have_modules_file` for
-extra modules. Override or disable in `.springdocker.toml`:
+extra modules. Override or disable in `.dockly.toml`:
 
 ```toml
 [dockerfile]
@@ -243,25 +243,25 @@ jlink_baseline_modules = ["java.desktop", "java.logging", "java.naming"]
 
 See [ADR 0007](../docs/adr/0007-jlink-baseline-modules-web-detection.md).
 
-`springdocker explain` reports baseline and curated modules separately in JSON/table output.
+`dockly explain` reports baseline and curated modules separately in JSON/table output.
 Baseline modules are generator defaults; curated modules come from `must_have_modules_file`.
 
 Create template config:
 
 ```bash
-springdocker init --project-root samples/java-spring-docker --build-tool gradle
-springdocker init --project-root samples/java-spring-docker --build-tool gradle --profile full --print
+dockly init --project-root samples/java-spring-docker --build-tool gradle
+dockly init --project-root samples/java-spring-docker --build-tool gradle --profile full --print
 ```
 
 ### `init --interactive`
 
-Creates `.springdocker.toml` if missing, then runs the same wizard as `configure` (no Dockerfile write unless you chain commands yourself):
+Creates `.dockly.toml` if missing, then runs the same wizard as `configure` (no Dockerfile write unless you chain commands yourself):
 
 ```bash
-springdocker init --project-root . --build-tool maven --interactive
+dockly init --project-root . --build-tool maven --interactive
 # equivalent to:
-# springdocker init --project-root . --build-tool maven
-# springdocker configure --project-root . --force
+# dockly init --project-root . --build-tool maven
+# dockly configure --project-root . --force
 ```
 
 Use `--force` on `init` to overwrite an existing skeleton; use `configure --force` to replace only the `[dockerfile]` section in an existing file.
@@ -270,20 +270,20 @@ See [docs/adopt.md](../docs/adopt.md) for first-time setup, CI examples, and mig
 
 ## Legacy benchmark scripts (deprecated)
 
-`benchmark generate` and `benchmark run` still accept `--use-legacy-scripts`, `SPRINGDOCKER_LEGACY_SCRIPTS=1`, or `legacy_scripts = true` in `.springdocker.toml` to delegate to project scripts under `benchmarks/`. **This path is deprecated and will be removed in v2.0.0.** The CLI prints a warning when legacy mode is used.
+`benchmark generate` and `benchmark run` still accept `--use-legacy-scripts`, `DOCKLY_LEGACY_SCRIPTS=1`, or `legacy_scripts = true` in `.dockly.toml` to delegate to project scripts under `benchmarks/`. **This path is deprecated and will be removed in v2.0.0.** The CLI prints a warning when legacy mode is used.
 
 Migrate by removing legacy flags and config keys — the internal implementation is the default:
 
 ```bash
-springdocker benchmark generate --project-root .
-springdocker benchmark run --project-root .
+dockly benchmark generate --project-root .
+dockly benchmark run --project-root .
 ```
 
-Dockerfile generation always uses the internal config-driven generator. Use `springdocker configure` for interactive setup instead of the retired `tools/dockerfile_wizard.py` script.
+Dockerfile generation always uses the internal config-driven generator. Use `dockly configure` for interactive setup instead of the retired `tools/dockerfile_wizard.py` script.
 
 ## Inspect command
 
-`springdocker inspect` prints static metadata about the target project:
+`dockly inspect` prints static metadata about the target project:
 
 - detected build tool
 - Spring Boot version when present
@@ -296,11 +296,11 @@ Use `--format json` for machine-readable output.
 
 ## Explain command
 
-`springdocker explain` reads a Dockerfile and **describes** optimizations it recognizes using static text heuristics (regex and keyword matching).
+`dockly explain` reads a Dockerfile and **describes** optimizations it recognizes using static text heuristics (regex and keyword matching).
 
 **Advisory only — not a CI gate.** Explain output helps humans review and document a Dockerfile. It does **not** perform a security audit, lint the file, scan images, or prove runtime correctness. Hand-written Dockerfiles may be misread; a missing feature in explain output does not mean that optimization is absent at runtime.
 
-**Use `springdocker verify` for CI gates** — hadolint, trivy, SBOM checks, optional dive/cosign/smoke, and `--check-config-drift` for config SSOT compliance. Only `verify` uses pass/fail semantics suitable for blocking merges.
+**Use `dockly verify` for CI gates** — hadolint, trivy, SBOM checks, optional dive/cosign/smoke, and `--check-config-drift` for config SSOT compliance. Only `verify` uses pass/fail semantics suitable for blocking merges.
 
 Recognized signals include:
 
@@ -314,31 +314,31 @@ Recognized signals include:
 
 Use `--format json` when you want stable structured output. The JSON `notes` field repeats the advisory scope and points to `verify`.
 
-Add `--config-aware` to include resolved `[dockerfile]` options from `.springdocker.toml`, per-option sources (`default` or `project`), and drift detection against `dockerfile generate`. Config drift in explain is informational; enforce SSOT in CI with `verify --check-config-drift`:
+Add `--config-aware` to include resolved `[dockerfile]` options from `.dockly.toml`, per-option sources (`default` or `project`), and drift detection against `dockerfile generate`. Config drift in explain is informational; enforce SSOT in CI with `verify --check-config-drift`:
 
 ```bash
-springdocker explain --project-root . Dockerfile.generated --format json --config-aware
-springdocker verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
+dockly explain --project-root . Dockerfile.generated --format json --config-aware
+dockly verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
 ```
 
 ## Verify command
 
-`springdocker verify` runs a battery of checks against a generated Dockerfile and optional runtime context. It is designed to work in CI without installing every external tool.
+`dockly verify` runs a battery of checks against a generated Dockerfile and optional runtime context. It is designed to work in CI without installing every external tool.
 
 ```bash
-springdocker verify --project-root tests/fixtures/maven-only Dockerfile.generated
-springdocker verify --project-root tests/fixtures/maven-only Dockerfile.generated \
+dockly verify --project-root tests/fixtures/maven-only Dockerfile.generated
+dockly verify --project-root tests/fixtures/maven-only Dockerfile.generated \
   --image demo:latest \
   --smoke-url http://127.0.0.1:8081/actuator/health \
   --format junit \
   --output reports/verify.junit.xml
-springdocker verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
-springdocker verify --project-root . --dockerfile nested/Dockerfile.generated --trivy-scan-project-root
+dockly verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
+dockly verify --project-root . --dockerfile nested/Dockerfile.generated --trivy-scan-project-root
 ```
 
 By default, `trivy` scans the Dockerfile path and the directory that contains it (the Docker build context). On monorepos with nested Dockerfiles, this avoids scanning unrelated modules. Pass `--trivy-scan-project-root` to restore the previous full-tree scan.
 
-`--check-config-drift` adds config SSOT checks when `.springdocker.toml` is present:
+`--check-config-drift` adds config SSOT checks when `.dockly.toml` is present:
 
 | Check | Validates |
 |---|---|
@@ -358,12 +358,12 @@ By default, `trivy` scans the Dockerfile path and the directory that contains it
 | `sbom` | `sbom.spdx.json` in project root | n/a (always runs) | **failed** if file missing, invalid JSON, or missing `spdxVersion` |
 | `smoke` | `--smoke-url` | **skipped** (`no smoke URL provided`) | HTTP/network error or status ≥ 400 |
 
-Verifier plugins registered under `springdocker.verifiers` run after the built-in checks. See `docs/extensions.md`.
+Verifier plugins registered under `dockly.verifiers` run after the built-in checks. See `docs/extensions.md`.
 
 ### Skip vs fail semantics
 
 - **skipped** checks do not fail the command. They appear in table/JSON/JUnit/SARIF output for visibility.
-- **failed** checks set the overall result to `failed` and make `springdocker verify` exit with code `1`.
+- **failed** checks set the overall result to `failed` and make `dockly verify` exit with code `1`.
 - Only **failed** checks affect the exit code. A run where every external tool is missing but `sbom.spdx.json` is valid still exits `0`.
 
 Optional tools are intentionally optional: install `hadolint`, `trivy`, `dive`, and `cosign` locally or in CI when you want those gates enforced.
@@ -384,7 +384,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t app:multiarch .
 
 ## Compare command
 
-`springdocker benchmark compare` compares each variant against a required baseline variant and reports deltas.
+`dockly benchmark compare` compares each variant against a required baseline variant and reports deltas.
 
 - `--baseline-variant` selects the variant to compare against.
 - `--scenario` narrows the CSV to one scenario.
@@ -392,7 +392,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t app:multiarch .
 
 ## Benchmark run reproducibility
 
-`springdocker benchmark run` supports deterministic benchmark controls for local or CI runs:
+`dockly benchmark run` supports deterministic benchmark controls for local or CI runs:
 
 - `--cpuset-cpus` pins benchmark containers to specific CPUs.
 - `--memory` caps container memory.
@@ -400,4 +400,4 @@ docker buildx build --platform linux/amd64,linux/arm64 -t app:multiarch .
 - `--max-workers` runs standard scenarios concurrently with controlled worker count.
 - `--normalized-runtime` applies read-only, no-new-privileges, and tmpfs isolation.
 
-These settings can also come from `[benchmark.run]` in `.springdocker.toml`.
+These settings can also come from `[benchmark.run]` in `.dockly.toml`.

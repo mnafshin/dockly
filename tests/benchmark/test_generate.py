@@ -8,13 +8,13 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.benchmarks.generate import (
+from dockly.benchmarks.generate import (
     NativeScenarioDefinition,
     StandardScenarioDefinition,
     default_scenarios,
     generate_benchmark_assets,
 )
-from springdocker.config import sample_dockerfile_config
+from dockly.config import sample_dockerfile_config
 
 
 class GenerateScenarioTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class GenerateScenarioTests(unittest.TestCase):
             self.assertTrue(jvm_balanced.exists())
             self.assertTrue(spring_aot.exists())
             self.assertTrue(native_aot.exists())
-            self.assertIn("https://github.com/mnafshin/springdocker", jvm_balanced.read_text("utf-8"))
+            self.assertIn("https://github.com/mnafshin/dockly", jvm_balanced.read_text("utf-8"))
             self.assertIn("gcr.io/distroless/base-debian", jvm_balanced.read_text("utf-8"))
             self.assertIn("process-aot", spring_aot.read_text("utf-8"))
             self.assertIn("native:compile", native_aot.read_text("utf-8"))

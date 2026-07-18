@@ -22,7 +22,7 @@ Go, Python, and other language strategies — community/later via the Strategy A
 
 `explain` uses static text heuristics — useful for documentation and PR review, not a security or correctness audit. `verify` runs tool-backed and config checks with pass/fail semantics; use it to block merges. See [cli/README.md](../cli/README.md#explain-command).
 
-This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**. Installable package and CLI surfaces are renaming from `springdocker` → `dockly` ([#3](https://github.com/mnafshin/dockly/issues/3)); until that lands, PyPI/CLI may still use the legacy name.
+This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**. Install surfaces use **dockly** ([#3](https://github.com/mnafshin/dockly/issues/3)); legacy `.springdocker.toml` / `SPRINGDOCKER_*` remain accepted during the deprecation window ([#9](https://github.com/mnafshin/dockly/issues/9)).
 
 ## Target audience
 
@@ -44,12 +44,12 @@ The benchmark sample uses bleeding-edge versions to exercise generator output an
 
 | Path | Use when |
 |---|---|
-| `pip install springdocker` / `pipx` / `uv tool` | Full toolkit — Dockerfile, explain, verify, benchmarks; `.springdocker.toml` SSOT ([ADR 0005](adr/0005-config-first-dockerfile-generation.md)) |
-| Maven plugin `io.github.mnafshin:springdocker-maven-plugin` | Java-only builder — generate/verify from `pom.xml`; no Python ([ADR 0010](adr/0010-pom-gradle-ssot-java-builder.md)) |
+| `pip install dockly` / `pipx` / `uv tool` | Full toolkit — Dockerfile, explain, verify, benchmarks; `.dockly.toml` SSOT ([ADR 0005](adr/0005-config-first-dockerfile-generation.md)) |
+| Maven plugin `io.github.mnafshin:springdocker-maven-plugin` | Java-only builder — generate/verify from `pom.xml`; no Python ([ADR 0010](adr/0010-pom-gradle-ssot-java-builder.md); coordinates rebrand in [#4](https://github.com/mnafshin/dockly/issues/4)) |
 | Clone + `python scripts/checkout_sample.py` | Reproduce benchmark scenarios, reference CSVs, presentation numbers ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample)) |
 | Clone + editable install | CLI development ([CONTRIBUTING.md](../CONTRIBUTING.md)) |
 
-**PyPI-first** remains the distribution model for the CLI ([ADR 0006](adr/0006-pypi-first-distribution.md)). The Maven plugin is a separate artifact (local `mvn install` today; Maven Central tracked in [#145](https://github.com/mnafshin/springdocker/issues/145)).
+**PyPI-first** remains the distribution model for the CLI ([ADR 0006](adr/0006-pypi-first-distribution.md)). The Maven plugin is a separate artifact (local `mvn install` today; Maven Central tracked in [#145](https://github.com/mnafshin/dockly/issues/145)).
 
 The reference sample is a separate repository, pinned from this one. See [ADR 0009](adr/0009-external-sample-repository.md).
 
@@ -76,7 +76,7 @@ These behaviors are enforced by [`.github/workflows/ci.yml`](../.github/workflow
 | Area | What CI proves |
 |---|---|
 | **CLI quality** | `ruff` lint, `mypy` on `src/`, pytest suites (`unit`, `integration`, `e2e`, `benchmark`) on Ubuntu/macOS/Windows and Python 3.10–3.12 |
-| **Package coverage** | ≥80% line coverage on the entire `springdocker` package (same gate as local `pytest`; see `pyproject.toml`) |
+| **Package coverage** | ≥80% line coverage on the entire `dockly` package (same gate as local `pytest`; see `pyproject.toml`) |
 | **Dockerfile generation** | Snapshot and e2e tests on `tests/fixtures/{maven-only,gradle-only}` — output shape, flags, and explain/verify wiring |
 | **Benchmark generator** | `benchmark-hygiene` checks out the pinned sample, runs `benchmark generate`, and asserts generated assets stay gitignored in the sample repo |
 | **Benchmark analyzer** | `benchmark-regression` verifies sample `03-base-image-choice/results/baseline.json` matches analyze output for the paired `raw.csv`, then runs the 20% regression comparator |
@@ -86,14 +86,14 @@ These behaviors are enforced by [`.github/workflows/ci.yml`](../.github/workflow
 What CI **does not** prove today:
 
 - Full benchmark suite execution against real Docker on every push.
-- `springdocker verify` with hadolint, trivy, dive, or cosign installed — verify tests mock or skip external tools.
+- `dockly verify` with hadolint, trivy, dive, or cosign installed — verify tests mock or skip external tools.
 - Performance numbers in presentations or docs — those come from local/reference runs on the sample app.
 
 Public docs and talks should treat benchmark tables as **sample evidence**, not fleet-wide guarantees, unless you reproduce them on your project.
 
 ## Optional evidence subsystem
 
-Benchmarks are an **opt-in extra** (`pip install springdocker[benchmark]`):
+Benchmarks are an **opt-in extra** (`pip install dockly[benchmark]`):
 
 1. `benchmark generate` — writes scenario Dockerfiles locally (gitignored under the sample tree).
 2. `benchmark run` — requires Docker on the host; skipped for native scaffold scenarios by default.
@@ -114,19 +114,19 @@ CLI onboarding/regression stays in this repository; evidence depth lives in an e
 
 Fixtures are minimal (CLI/output shape only). Full Docker builds and presentation numbers use the external sample (checked out under `samples/`). Do not copy the full benchmark tree into every consumer repo.
 
-Resolved in [#95](https://github.com/mnafshin/springdocker/issues/95) / ADR 0004; externalization in [ADR 0009](adr/0009-external-sample-repository.md).
+Resolved in [#95](https://github.com/mnafshin/dockly/issues/95) / ADR 0004; externalization in [ADR 0009](adr/0009-external-sample-repository.md).
 
 ## Reference stack vs compatibility
 
 | Layer | CLI / production path | Reference sample (evidence) |
 |---|---|---|
 | Spring Boot | Maven/Gradle projects with Spring Boot markers | 4.0.1 sample app |
-| Java | Floor **17**; init/undetected fallback **17**; JEP 483 AOT **24+** | **25** in sample `.springdocker.toml` (includes scenario 02) |
+| Java | Floor **17**; init/undetected fallback **17**; JEP 483 AOT **24+** | **25** in sample `.dockly.toml` (includes scenario 02) |
 | Python CLI | Requires Python ≥3.10 | 3.12 in CI |
 
 Feature matrix and support ranges: [jvm.md](jvm.md).
 
-Production teams set `java_version` in `.springdocker.toml` for their service. The reference sample stays on current JDK/Spring Boot for benchmark and presentation refresh — see [ADR 0008](adr/0008-target-audience.md).
+Production teams set `java_version` in `.dockly.toml` for their service. The reference sample stays on current JDK/Spring Boot for benchmark and presentation refresh — see [ADR 0008](adr/0008-target-audience.md).
 
 ## Why not Jib?
 
@@ -180,5 +180,5 @@ dockly is for teams that want:
 - [#1](https://github.com/mnafshin/dockly/issues/1) — this product vision (ADR 0011)
 - [#3](https://github.com/mnafshin/dockly/issues/3) — surface rebrand (CLI, PyPI, config, Action, env)
 - [#6](https://github.com/mnafshin/dockly/issues/6) — Strategy API
-- [#9](https://github.com/mnafshin/dockly/issues/9) — optional springdocker compatibility shims
+- [#9](https://github.com/mnafshin/dockly/issues/9) — optional dockly compatibility shims
 - [#10](https://github.com/mnafshin/dockly/issues/10) — contributor guide + strategy stubs

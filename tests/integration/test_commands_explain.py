@@ -11,12 +11,12 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import cmd_explain
-from springdocker.config import load_config
-from springdocker.config_audit import resolve_dockerfile_audit_config
-from springdocker.dockerfile import DockerfileOptions, build_dockerfile
-from springdocker.errors import EXIT_OK, EXIT_USAGE
-from springdocker.services.dockerfile_service import render_dockerfile_text_from_config
+from dockly.commands import cmd_explain
+from dockly.config import load_config
+from dockly.config_audit import resolve_dockerfile_audit_config
+from dockly.dockerfile import DockerfileOptions, build_dockerfile
+from dockly.errors import EXIT_OK, EXIT_USAGE
+from dockly.services.dockerfile_service import render_dockerfile_text_from_config
 
 
 class ExplainCommandTests(unittest.TestCase):
@@ -135,7 +135,7 @@ class ExplainCommandTests(unittest.TestCase):
     def test_explain_config_aware_includes_resolved_options(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            (root / ".springdocker.toml").write_text(
+            (root / ".dockly.toml").write_text(
                 "[project]\n"
                 'build_tool = "maven"\n\n'
                 "[dockerfile]\n"
@@ -144,7 +144,7 @@ class ExplainCommandTests(unittest.TestCase):
                 encoding="utf-8",
             )
             dockerfile = root / "Dockerfile.generated"
-            loaded = load_config(root / ".springdocker.toml")
+            loaded = load_config(root / ".dockly.toml")
             config = resolve_dockerfile_audit_config(root, "maven", dockerfile, loaded)
             dockerfile.write_text(
                 render_dockerfile_text_from_config(root, config, "maven"),
@@ -171,7 +171,7 @@ class ExplainCommandTests(unittest.TestCase):
     def test_explain_config_aware_detects_drift(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            (root / ".springdocker.toml").write_text(
+            (root / ".dockly.toml").write_text(
                 "[project]\n"
                 'build_tool = "maven"\n\n'
                 "[dockerfile]\n"

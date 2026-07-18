@@ -6,8 +6,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.analyze import VariantSummary
-from springdocker.regression import detect_regressions, format_regression_json, format_regression_table, load_summaries
+from dockly.analyze import VariantSummary
+from dockly.regression import detect_regressions, format_regression_json, format_regression_table, load_summaries
 
 
 class RegressionTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(violations, [])
 
     def test_scenario_03_baseline_matches_committed_raw_csv(self) -> None:
-        from springdocker.analyze import format_json, summarize_csv
+        from dockly.analyze import format_json, summarize_csv
         from tests.test_support import ROOT
 
         results = ROOT / "samples" / "java-spring-docker" / "benchmarks" / "03-base-image-choice" / "results"

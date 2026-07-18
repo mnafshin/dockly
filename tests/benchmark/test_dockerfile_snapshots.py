@@ -6,7 +6,7 @@ from tests.test_support import ROOT, add_src_to_path
 
 add_src_to_path()
 
-from springdocker.dockerfile import DockerfileOptions, build_dockerfile
+from dockly.dockerfile import DockerfileOptions, build_dockerfile
 
 SNAPSHOT_DIR = ROOT / "tests" / "snapshots" / "dockerfile"
 

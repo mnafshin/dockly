@@ -1,10 +1,10 @@
 # Presentation decks
 
-Reveal.js slide decks for **springdocker** (product/features) and **Dockerfile engineering** (step-by-step evidence).
+Reveal.js slide decks for **dockly** (product/features) and **Dockerfile engineering** (step-by-step evidence).
 
 These are **maintained project assets**, not throwaway session notes. They support the [secondary conference/evidence audience](../POSITIONING.md#target-audience) described in positioning docs — versioned alongside benchmark CSVs and sample-app evidence.
 
-Policy: [#83](https://github.com/mnafshin/springdocker/issues/83) (ownership & cadence) · [#91](https://github.com/mnafshin/springdocker/issues/91) (commit vs publish).
+Policy: [#83](https://github.com/mnafshin/dockly/issues/83) (ownership & cadence) · [#91](https://github.com/mnafshin/dockly/issues/91) (commit vs publish).
 
 ## Ownership
 
@@ -31,7 +31,7 @@ Stale numbers are acceptable between talks if slides label evidence as sample-sp
 
 ## Commit and publish policy
 
-Resolved in [#91](https://github.com/mnafshin/springdocker/issues/91).
+Resolved in [#91](https://github.com/mnafshin/dockly/issues/91).
 
 | Asset | Policy |
 |---|---|
@@ -73,7 +73,7 @@ Use `--check` in CI or pre-talk prep to detect stale numbers without writing fil
 ## Open locally
 
 ```bash
-cd /path/to/springdocker
+cd /path/to/dockly
 python3 -m http.server 8000
 ```
 
@@ -81,7 +81,7 @@ Then open:
 
 | Deck | File | Audience |
 |---|---|---|
-| **Java/Spring Docker techniques** | [`java-spring-docker-techniques.html`](java-spring-docker-techniques.html) | JUG/meetup talks — Dockerfile craft; one impact slide with sample deltas; brief springdocker mention at the end |
+| **Java/Spring Docker techniques** | [`java-spring-docker-techniques.html`](java-spring-docker-techniques.html) | JUG/meetup talks — Dockerfile craft; one impact slide with sample deltas; brief dockly mention at the end |
 | **Features & workflow** | [`springdocker-features.html`](springdocker-features.html) | Teams evaluating the CLI: configure, generate, explain, verify, plugins |
 | **Docker steps & evidence** | [`docker-steps-evidence.html`](docker-steps-evidence.html) | Engineers choosing build/runtime/JVM options with benchmark evidence |
 
@@ -93,8 +93,8 @@ Presentation decks use `data-benchmark="scenario/variant/metric"` bindings. Afte
 export DOCKER_BUILDKIT=1
 
 python scripts/checkout_sample.py
-springdocker benchmark generate --project-root samples/java-spring-docker --java-version 25
-springdocker benchmark run --project-root samples/java-spring-docker --profile full
+dockly benchmark generate --project-root samples/java-spring-docker --java-version 25
+dockly benchmark run --project-root samples/java-spring-docker --profile full
 
 python scripts/update_presentation_benchmarks.py
 ```
@@ -117,7 +117,7 @@ Scenario **04 (native)** is not measured by the runner (`--skip-native` by defau
 
 ## Files
 
-- `java-spring-docker-techniques.html` — **recommended for live talks**: multi-stage, layered JAR, jlink, AppCDS, security; wrap-up = impact → cost → bridges (drift → config/generate/verify) → short springdocker close
+- `java-spring-docker-techniques.html` — **recommended for live talks**: multi-stage, layered JAR, jlink, AppCDS, security; wrap-up = impact → cost → bridges (drift → config/generate/verify) → short dockly close
 - `springdocker-features.html` — features & workflow (config-first CLI)
 - `docker-steps-evidence.html` — scenarios 01–05 with benefits and **config key → Dockerfile** ON/OFF blocks per decision slide
 - `benchmark-summary.md` — generated markdown summary (gitignored)

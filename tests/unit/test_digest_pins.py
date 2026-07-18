@@ -9,7 +9,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.digest_pins import (
+from dockly.digest_pins import (
     DISTROLESS_BASE_DIGESTS,
     IMAGE_PINS,
     OS_RUNTIME_IMAGES,
@@ -73,7 +73,7 @@ class DigestPinVerifyTests(unittest.TestCase):
         opener.open.return_value = response
 
         token_payload = io.BytesIO(b'{"token":"test-token"}')
-        with patch("springdocker.digest_pins.urllib.request.urlopen", return_value=token_payload):
+        with patch("dockly.digest_pins.urllib.request.urlopen", return_value=token_payload):
             verify_image_pin(pin, opener=opener)
 
         opener.open.assert_called_once()
@@ -89,7 +89,7 @@ class DigestPinVerifyTests(unittest.TestCase):
             if first.label == pin.label:
                 raise urllib.error.URLError("offline")
 
-        with patch("springdocker.digest_pins.verify_image_pin", side_effect=_fail), self.assertRaises(RuntimeError) as ctx:
+        with patch("dockly.digest_pins.verify_image_pin", side_effect=_fail), self.assertRaises(RuntimeError) as ctx:
             verify_all_image_pins()
         self.assertIn(pin.label, str(ctx.exception))
 

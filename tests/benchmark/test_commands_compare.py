@@ -11,8 +11,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import cmd_benchmark_compare
-from springdocker.errors import EXIT_OK, EXIT_USAGE
+from dockly.commands import cmd_benchmark_compare
+from dockly.errors import EXIT_OK, EXIT_USAGE
 
 
 class CompareCommandTests(unittest.TestCase):

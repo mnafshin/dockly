@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from springdocker.analyze import VariantSummary, format_json, format_table, summarize_csv
+from dockly.analyze import VariantSummary, format_json, format_table, summarize_csv
 
 DEFAULT_PROJECT_ROOT = Path("samples/java-spring-docker")
 

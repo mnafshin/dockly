@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-from springdocker.benchmarks.generate import (
+from dockly.benchmarks.generate import (
     EXPECTED_CSV_HEADER,
     NativeScenarioDefinition,
     StandardScenarioDefinition,

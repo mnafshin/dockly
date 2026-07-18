@@ -22,6 +22,7 @@ from .commands import (
 from .config import (
     DockerfileGenerateConfig,
     load_config,
+    load_project_config,
     resolve_benchmark_generate_config,
     resolve_benchmark_run_config,
     resolve_dockerfile_generate_config,
@@ -59,7 +60,7 @@ _PLUGIN_REGISTRATION_WARNINGS: tuple[str, ...] = ()
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="springdocker",
+        prog="dockly",
         description="CLI for Dockerfile and benchmark workflows in Spring Boot Maven/Gradle projects.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -75,11 +76,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="One-shot onboarding: detect project, write config, generate Dockerfile",
         description=(
             "Collapse doctor → config → dockerfile generate into a single non-interactive command. "
-            "Writes .springdocker.toml with the production-balanced profile by default."
+            "Writes .dockly.toml with the production-balanced profile by default."
         ),
     )
     add_common_options(setup)
-    setup.add_argument("--config", default=".springdocker.toml", help="Config file path to create or update")
+    setup.add_argument("--config", default=".dockly.toml", help="Config file path to create or update")
     setup.add_argument(
         "--profile",
         choices=list(NONINTERACTIVE_PROFILES),
@@ -101,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
     setup.add_argument(
         "--ci",
         action="store_true",
-        help="Also write .github/workflows/dockerfile.yml using the springdocker GitHub Action",
+        help="Also write .github/workflows/dockerfile.yml using the dockly GitHub Action",
     )
     setup.add_argument(
         "--ci-only",
@@ -109,9 +110,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only write the GitHub Actions workflow (skip config/Dockerfile generation)",
     )
 
-    init = sub.add_parser("init", help="Generate starter .springdocker.toml for this project")
+    init = sub.add_parser("init", help="Generate starter .dockly.toml for this project")
     add_common_options(init)
-    init.add_argument("--config", default=".springdocker.toml", help="Config file path to create")
+    init.add_argument("--config", default=".dockly.toml", help="Config file path to create")
     init.add_argument(
         "--profile",
         choices=["quick", "full"],
@@ -126,9 +127,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="After init, run configure wizard to populate [dockerfile] options",
     )
 
-    configure = sub.add_parser("configure", help="Interactive wizard that writes .springdocker.toml")
+    configure = sub.add_parser("configure", help="Interactive wizard that writes .dockly.toml")
     add_common_options(configure)
-    configure.add_argument("--config", default=".springdocker.toml", help="Config file path")
+    configure.add_argument("--config", default=".dockly.toml", help="Config file path")
     configure.add_argument("--force", action="store_true", help="Overwrite existing [dockerfile] section")
     configure.add_argument(
         "--generate",
@@ -149,7 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Describe recognized optimizations using text heuristics. "
             "Output is for human review and documentation — not a substitute for "
-            "security or correctness checks. Use `springdocker verify` for CI gates."
+            "security or correctness checks. Use `dockly verify` for CI gates."
         ),
     )
     add_common_options(explain)
@@ -158,7 +159,7 @@ def build_parser() -> argparse.ArgumentParser:
     explain.add_argument(
         "--config-aware",
         action="store_true",
-        help="Include resolved .springdocker.toml options, option sources, and drift detection",
+        help="Include resolved .dockly.toml options, option sources, and drift detection",
     )
 
     verify = sub.add_parser(
@@ -166,7 +167,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run verification checks against a Dockerfile and project context (CI gates)",
         description=(
             "Run tool-backed and config checks with pass/fail semantics suitable for CI. "
-            "Contrast with `springdocker explain`, which is advisory static analysis only."
+            "Contrast with `dockly explain`, which is advisory static analysis only."
         ),
     )
     add_common_options(verify, with_build_tool=True)
@@ -261,8 +262,8 @@ def build_parser() -> argparse.ArgumentParser:
     bench_run.add_argument("--profile", choices=["quick", "full"], default=None)
     bench_run.add_argument(
         "--config",
-        default=".springdocker.toml",
-        help="Path to TOML config file relative to project root (default: .springdocker.toml)",
+        default=".dockly.toml",
+        help="Path to TOML config file relative to project root (default: .dockly.toml)",
     )
     bench_run.add_argument(
         "--runner-arg",
@@ -420,7 +421,7 @@ def _handle_configure(args: argparse.Namespace, project_root: Path) -> int:
 
 
 def _handle_doctor(args: argparse.Namespace, project_root: Path) -> int:
-    loaded = load_config(project_root / ".springdocker.toml")
+    loaded = load_project_config(project_root)
     resolved = resolve_doctor_config(cli_build_tool=args.build_tool, loaded_config=loaded)
     return cmd_doctor(project_root, resolved.build_tool)
 
@@ -454,13 +455,13 @@ def _handle_verify(args: argparse.Namespace, project_root: Path) -> int:
 
 
 def _handle_dockerfile_generate(args: argparse.Namespace, project_root: Path) -> int:
-    loaded = load_config(project_root / ".springdocker.toml")
+    loaded = load_project_config(project_root)
     resolved = _resolve_dockerfile_config(args, loaded, project_root)
     return cmd_dockerfile_generate(project_root=project_root, config=resolved)
 
 
 def _handle_benchmark_generate(args: argparse.Namespace, project_root: Path) -> int:
-    loaded = load_config(project_root / ".springdocker.toml")
+    loaded = load_project_config(project_root)
     resolved = resolve_benchmark_generate_config(
         cli_build_tool=args.build_tool,
         cli_java_version=args.java_version,

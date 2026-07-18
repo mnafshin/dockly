@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
 
     reports, missing = load_reports(project_root)
     if missing:
-        print("Missing benchmark CSV files (run `springdocker benchmark run` first):", file=sys.stderr)
+        print("Missing benchmark CSV files (run `dockly benchmark run` first):", file=sys.stderr)
         for path in missing:
             print(f"  - {path}", file=sys.stderr)
         print("", file=sys.stderr)

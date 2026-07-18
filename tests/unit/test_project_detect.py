@@ -9,8 +9,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.gradle_descriptors import resolve_gradle_descriptor_files
-from springdocker.project_detect import (
+from dockly.gradle_descriptors import resolve_gradle_descriptor_files
+from dockly.project_detect import (
     analyze_multi_module_layout,
     detect_build_tool,
     has_spring_project_markers,
@@ -44,7 +44,7 @@ class ProjectDetectTests(unittest.TestCase):
     def test_detect_uses_plugin_detector(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            with patch("springdocker.project_detect.detect_build_tool_from_plugins", return_value="gradle"):
+            with patch("dockly.project_detect.detect_build_tool_from_plugins", return_value="gradle"):
                 self.assertEqual(detect_build_tool(root), "gradle")
 
     def test_spring_markers(self) -> None:

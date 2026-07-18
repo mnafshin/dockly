@@ -46,7 +46,7 @@ jobs:
 
       - name: Generate benchmark assets
         run: |
-          springdocker benchmark generate \
+          dockly benchmark generate \
             --project-root samples/java-spring-docker \
             --java-version 25
 
@@ -125,7 +125,7 @@ jobs:
       # CI does not run Docker benchmarks here — it checks analyzer output stays aligned.
       - name: Verify baseline.json matches pinned raw.csv
         run: |
-          springdocker benchmark analyze \
+          dockly benchmark analyze \
             --project-root samples/java-spring-docker \
             benchmarks/03-base-image-choice/results/raw.csv \
             --format json \
@@ -146,7 +146,7 @@ jobs:
 
       - name: Benchmark regression gate
         run: |
-          springdocker benchmark analyze \
+          dockly benchmark analyze \
             --project-root samples/java-spring-docker \
             benchmarks/03-base-image-choice/results/raw.csv \
             --baseline benchmarks/03-base-image-choice/results/baseline.json \
@@ -229,7 +229,7 @@ jobs:
       - name: Checkout pinned java-spring-docker-sample
         run: python scripts/checkout_sample.py --force-remote
 
-      # Same gate as local `pytest` (see pyproject.toml addopts: 80% on springdocker).
+      # Same gate as local `pytest` (see pyproject.toml addopts: 80% on dockly).
       - name: Enforce package coverage gate
         run: pytest
 

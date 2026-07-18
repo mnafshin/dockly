@@ -8,15 +8,15 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.config import load_config, resolve_dockerfile_generate_config
-from springdocker.config_serializer import (
+from dockly.config import load_config, resolve_dockerfile_generate_config
+from dockly.config_serializer import (
     dockerfile_options_to_table,
     load_existing_config,
     merge_dockerfile_section,
     render_dockerfile_section,
 )
-from springdocker.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions
-from springdocker.dockerfile_profiles import apply_profile
+from dockly.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions
+from dockly.dockerfile_profiles import apply_profile
 
 
 class ConfigSerializerTests(unittest.TestCase):
@@ -36,7 +36,7 @@ class ConfigSerializerTests(unittest.TestCase):
 
     def test_merge_dockerfile_section_inserts_when_missing(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / ".springdocker.toml"
+            path = Path(td) / ".dockly.toml"
             path.write_text("[project]\nbuild_tool = \"maven\"\n", encoding="utf-8")
             table = dockerfile_options_to_table(DockerfileOptions(build_tool="maven"))
             merge_dockerfile_section(path, table)
@@ -47,7 +47,7 @@ class ConfigSerializerTests(unittest.TestCase):
 
     def test_merge_dockerfile_section_preserves_other_sections(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / ".springdocker.toml"
+            path = Path(td) / ".dockly.toml"
             path.write_text(
                 "[project]\nbuild_tool = \"maven\"\n\n[benchmark.run]\nprofile = \"quick\"\n",
                 encoding="utf-8",
@@ -62,7 +62,7 @@ class ConfigSerializerTests(unittest.TestCase):
 
     def test_merge_dockerfile_section_replaces_existing_block(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / ".springdocker.toml"
+            path = Path(td) / ".dockly.toml"
             path.write_text(
                 "[dockerfile]\noutput = \"old\"\njava_version = 21\n\n[project]\nbuild_tool = \"maven\"\n",
                 encoding="utf-8",
@@ -79,7 +79,7 @@ class ConfigSerializerTests(unittest.TestCase):
 
     def test_round_trip_through_config_loader(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            path = Path(td) / ".springdocker.toml"
+            path = Path(td) / ".dockly.toml"
             options = DockerfileOptions(
                 build_tool="maven",
                 java_version=25,

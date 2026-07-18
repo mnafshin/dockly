@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (amended for [#108](https://github.com/mnafshin/springdocker/issues/108))
+Accepted (amended for [#108](https://github.com/mnafshin/dockly/issues/108))
 
 ## Context
 
@@ -51,11 +51,11 @@ HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
 - **Distroless users** must configure readiness at the orchestrator layer — documented in
   [`cli/README.md`](../cli/README.md#runtime-bases-and-healthcheck) and presentation decks.
 - **OS runtime users** get an actuator-aware Dockerfile probe when applicable; they can override or disable
-  via `healthcheck_path` in `.springdocker.toml` or `--healthcheck-path` on the CLI.
+  via `healthcheck_path` in `.dockly.toml` or `--healthcheck-path` on the CLI.
 - We avoid curl-in-Dockerfile patterns and avoid bloating minimal images with probe packages on distroless.
 
 ## References
 
-- [#108 Update ADR 0003 healthcheck language](https://github.com/mnafshin/springdocker/issues/108)
-- `src/springdocker/dockerfile.py` — `_os_runtime_section`, distroless runtime branch
-- `src/springdocker/services/dockerfile_service.py` — `_resolve_healthcheck_path`
+- [#108 Update ADR 0003 healthcheck language](https://github.com/mnafshin/dockly/issues/108)
+- `src/dockly/dockerfile.py` — `_os_runtime_section`, distroless runtime branch
+- `src/dockly/services/dockerfile_service.py` — `_resolve_healthcheck_path`

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from springdocker.dockerfile import DockerfileOptions
+from dockly.dockerfile import DockerfileOptions
 
 
 def render_recipe(options: DockerfileOptions) -> str:

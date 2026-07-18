@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Final, TypedDict
 
-from springdocker.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions
-from springdocker.java_features import JEP483_MIN_JAVA, jep483_supported
+from dockly.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions
+from dockly.java_features import JEP483_MIN_JAVA, jep483_supported
 
 
 class _ProfileOverlay(TypedDict, total=False):

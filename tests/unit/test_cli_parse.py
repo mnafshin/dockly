@@ -7,7 +7,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.cli import build_parser
+from dockly.cli import build_parser
 
 
 class CliParseTests(unittest.TestCase):

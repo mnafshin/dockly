@@ -1,20 +1,20 @@
-"""Interactive and non-interactive writers for .springdocker.toml (config SSOT)."""
+"""Interactive and non-interactive writers for .dockly.toml (config SSOT)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from springdocker.config import HEALTHCHECK_AUTO, DockerfileGenerateConfig, write_default_config
-from springdocker.config_serializer import dockerfile_options_to_table, merge_dockerfile_section
-from springdocker.dockerfile import DockerfileOptions
-from springdocker.dockerfile_profiles import (
+from dockly.config import HEALTHCHECK_AUTO, DockerfileGenerateConfig, write_default_config
+from dockly.config_serializer import dockerfile_options_to_table, merge_dockerfile_section
+from dockly.dockerfile import DockerfileOptions
+from dockly.dockerfile_profiles import (
     PROFILE_NAMES,
     apply_profile_for_java,
     default_jvm_flags_for_display,
     profile_description,
 )
-from springdocker.java_features import JEP483_MIN_JAVA, MIN_JAVA_VERSION, jep483_supported
-from springdocker.project_detect import inspect_project_details
+from dockly.java_features import JEP483_MIN_JAVA, MIN_JAVA_VERSION, jep483_supported
+from dockly.project_detect import inspect_project_details
 
 # Profiles safe for non-interactive setup (excludes "custom", which needs the wizard).
 NONINTERACTIVE_PROFILES: tuple[str, ...] = tuple(name for name in PROFILE_NAMES if name != "custom")
@@ -232,7 +232,7 @@ def run_configure_wizard(
     print(f"  digest pins: {options.pin_digests}")
     print(f"  JVM flags: {', '.join(options.resolved_jvm_flags()) or '(none)'}")
 
-    if not ask_bool("\nWrite .springdocker.toml?", True):
+    if not ask_bool("\nWrite .dockly.toml?", True):
         raise SystemExit("configure cancelled")
 
     resolved = _write_dockerfile_config(
@@ -243,5 +243,5 @@ def run_configure_wizard(
     )
 
     print(f"\nwrote config: {config_path}")
-    print("next: springdocker dockerfile generate")
+    print("next: dockly dockerfile generate")
     return resolved

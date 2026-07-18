@@ -1,6 +1,6 @@
 # Observability examples
 
-springdocker does not generate app observability wiring. Stubs here:
+dockly does not generate app observability wiring. Stubs here:
 
 - [`application.properties`](application.properties) — minimal Actuator/Micrometer setup
 - [`service-monitor.yaml`](service-monitor.yaml) — Prometheus Operator scrape of the management port (`8081`)

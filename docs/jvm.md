@@ -1,6 +1,6 @@
 # JVM / Java feature matrix
 
-`springdocker` supports a small, explicit set of JVM/runtime choices in generated Dockerfiles.
+`dockly` supports a small, explicit set of JVM/runtime choices in generated Dockerfiles.
 
 ## Support ranges
 

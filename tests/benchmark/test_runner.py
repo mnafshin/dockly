@@ -6,7 +6,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.benchmarks.runner import _runtime_flags, parse_runner_args
+from dockly.benchmarks.runner import _runtime_flags, parse_runner_args
 
 
 class RunnerTests(unittest.TestCase):

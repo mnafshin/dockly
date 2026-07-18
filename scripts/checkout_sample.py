@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from springdocker.benchmarks.runner import _run_command
+from dockly.benchmarks.runner import _run_command
 
 MANIFEST_PATH = Path(__file__).with_name("java_spring_docker_sample.manifest.json")
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -1,4 +1,4 @@
-"""Java version feature availability for springdocker.
+"""Java version feature availability for dockly.
 
 Floor is Java 17. JEP 483 AOT cache requires Java 24+.
 """
@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from springdocker.dockerfile import DockerfileOptions
+    from dockly.dockerfile import DockerfileOptions
 
 MIN_JAVA_VERSION = 17
 JEP483_MIN_JAVA = 24

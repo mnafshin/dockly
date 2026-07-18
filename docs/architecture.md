@@ -1,6 +1,6 @@
 # Architecture
 
-`springdocker` is organized around a small CLI core and a sample Spring Boot project that acts as the target for generation and benchmark workflows.
+`dockly` is organized around a small CLI core and a sample Spring Boot project that acts as the target for generation and benchmark workflows.
 
 ## High-level flow
 
@@ -24,15 +24,15 @@ flowchart TD
 
 | Module | Responsibility |
 |---|---|
-| `src/springdocker/cli.py` | Parse CLI arguments and dispatch commands. |
-| `src/springdocker/commands.py` | Thin command handlers for CLI output and exit-code mapping. |
-| `src/springdocker/services/` | Command service layer for Dockerfile, benchmark, and project orchestration logic. |
-| `src/springdocker/config.py` | Load `.springdocker.toml` and resolve command settings. |
-| `src/springdocker/project_detect.py` | Detect Maven/Gradle markers, Spring Boot hints, and common multi-module layouts (Maven reactor / Gradle `include`). |
-| `src/springdocker/dockerfile.py` | Render Dockerfiles from structured options. |
-| `src/springdocker/dockerfile_explain.py` | Advisory Dockerfile explanation via static text heuristics (not a security audit; use `verify` for CI gates). |
-| `src/springdocker/analyze.py` | Summarize benchmark CSV data and format reports. |
-| `src/springdocker/benchmarks/` | Generate and run benchmark scenario assets. |
+| `src/dockly/cli.py` | Parse CLI arguments and dispatch commands. |
+| `src/dockly/commands.py` | Thin command handlers for CLI output and exit-code mapping. |
+| `src/dockly/services/` | Command service layer for Dockerfile, benchmark, and project orchestration logic. |
+| `src/dockly/config.py` | Load `.dockly.toml` and resolve command settings. |
+| `src/dockly/project_detect.py` | Detect Maven/Gradle markers, Spring Boot hints, and common multi-module layouts (Maven reactor / Gradle `include`). |
+| `src/dockly/dockerfile.py` | Render Dockerfiles from structured options. |
+| `src/dockly/dockerfile_explain.py` | Advisory Dockerfile explanation via static text heuristics (not a security audit; use `verify` for CI gates). |
+| `src/dockly/analyze.py` | Summarize benchmark CSV data and format reports. |
+| `src/dockly/benchmarks/` | Generate and run benchmark scenario assets. |
 
 ## CLI execution lifecycle
 
@@ -47,7 +47,7 @@ flowchart TD
 The precedence used across the CLI is:
 
 1. CLI flags
-2. `.springdocker.toml`
+2. `.dockly.toml`
 3. built-in defaults
 
 The configuration loader validates the schema early so invalid keys fail fast instead of being silently ignored.

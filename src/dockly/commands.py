@@ -284,7 +284,7 @@ def cmd_init(
         return EXIT_OK
 
     print(f"wrote config: {config_path}")
-    print("next: springdocker setup   # or: springdocker dockerfile generate")
+    print("next: dockly setup   # or: dockly dockerfile generate")
     return EXIT_OK
 
 
@@ -304,15 +304,15 @@ def _print_setup_next_steps(
         print(f"  1. Review {config_path.name} and {dockerfile_output}")
         if not verified:
             print(
-                "  2. springdocker verify --dockerfile "
+                "  2. dockly verify --dockerfile "
                 f"{dockerfile_output} --check-config-drift"
             )
-            print("  3. springdocker setup --ci-only   # write GitHub Actions workflow")
+            print("  3. dockly setup --ci-only   # write GitHub Actions workflow")
             print("  4. Commit the files")
         else:
-            print("  2. springdocker setup --ci-only   # write GitHub Actions workflow")
+            print("  2. dockly setup --ci-only   # write GitHub Actions workflow")
             print("  3. Commit the files")
-    print("  Tip: springdocker configure --force   # change strategy interactively")
+    print("  Tip: dockly configure --force   # change strategy interactively")
 
 
 def _ensure_placeholder_sbom(project_root: Path) -> None:
@@ -322,8 +322,8 @@ def _ensure_placeholder_sbom(project_root: Path) -> None:
         return
     payload = {
         "spdxVersion": "SPDX-2.3",
-        "name": "springdocker-setup-placeholder",
-        "comment": "Placeholder SPDX document created by springdocker setup --verify; replace with a real SBOM.",
+        "name": "dockly-setup-placeholder",
+        "comment": "Placeholder SPDX document created by dockly setup --verify; replace with a real SBOM.",
     }
     sbom_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print_warning(f"wrote placeholder SBOM for verify: {sbom_path}")
@@ -412,7 +412,7 @@ def cmd_setup(
         except FileExistsError as exc:
             print_error(str(exc))
             print("hint: rerun with --force to overwrite the [dockerfile] section", file=sys.stderr)
-            print("hint: or springdocker setup --ci-only to write only the GitHub workflow", file=sys.stderr)
+            print("hint: or dockly setup --ci-only to write only the GitHub workflow", file=sys.stderr)
             return EXIT_USAGE
         except ValueError as exc:
             print_error(str(exc))
@@ -470,8 +470,8 @@ LEGACY_BENCHMARK_SCRIPTS_REMOVAL_VERSION = "2.0.0"
 
 def _legacy_benchmark_scripts_warning() -> str:
     return (
-        "benchmark legacy scripts (--use-legacy-scripts, SPRINGDOCKER_LEGACY_SCRIPTS, "
-        "or [benchmark].legacy_scripts in .springdocker.toml) are deprecated and will be "
+        "benchmark legacy scripts (--use-legacy-scripts, DOCKLY_LEGACY_SCRIPTS, "
+        "or [benchmark].legacy_scripts in .dockly.toml) are deprecated and will be "
         f"removed in v{LEGACY_BENCHMARK_SCRIPTS_REMOVAL_VERSION}; "
         "use the internal benchmark implementation (default since 1.0.x)"
     )
@@ -480,7 +480,9 @@ def _legacy_benchmark_scripts_warning() -> str:
 def _use_legacy_scripts(explicit: bool) -> bool:
     if explicit:
         return True
-    return os.environ.get("SPRINGDOCKER_LEGACY_SCRIPTS", "").lower() in {"1", "true", "yes", "on"}
+    return os.environ.get("DOCKLY_LEGACY_SCRIPTS", "").lower() in {"1", "true", "yes", "on"} or (
+        os.environ.get("SPRINGDOCKER_LEGACY_SCRIPTS", "").lower() in {"1", "true", "yes", "on"}
+    )
 
 
 def _warn_legacy_benchmark_scripts() -> None:

@@ -1,8 +1,8 @@
-# springdocker Gradle Plugin
+# dockly Gradle Plugin
 
 Pure-Java twin of the [Maven builder plugin](../maven-plugin/README.md). **`build.gradle` / `build.gradle.kts` is SSOT** ([ADR 0010](../../docs/adr/0010-pom-gradle-ssot-java-builder.md)).
 
-- No Python / `.springdocker.toml` required for generate/verify
+- No Python / `.dockly.toml` required for generate/verify
 - Same option subset as the Maven plugin
 - Reuses `DockerfileRenderer` from the Maven module sources
 
@@ -18,7 +18,7 @@ plugins {
     id("io.github.mnafshin.springdocker") version "1.3.0-SNAPSHOT"
 }
 
-springdocker {
+dockly {
     javaVersion.set(21)
     runtimeImage.set("temurin")
     useJlink.set(false)
@@ -30,8 +30,8 @@ springdocker {
 ```
 
 ```bash
-./gradlew springdockerGenerate
-./gradlew springdockerVerify
+./gradlew docklyGenerate
+./gradlew docklyVerify
 ```
 
 ## Develop

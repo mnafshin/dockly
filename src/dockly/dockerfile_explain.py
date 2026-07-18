@@ -4,7 +4,7 @@ Static Dockerfile explanation helpers.
 Parses generated or hand-written Dockerfiles and reports recognized optimizations
 using text heuristics (regex and keyword matching). Output is **advisory** — it
 does not prove security, correctness, or runtime behavior. For tool-backed CI
-gates, use ``springdocker verify`` instead.
+gates, use ``dockly verify`` instead.
 """
 
 from __future__ import annotations
@@ -192,12 +192,12 @@ def explain_dockerfile_text(text: str) -> dict[str, object]:
         summary_parts.append("It adds curated modules for reflection or dynamic-loading edge cases.")
 
     if not summary_parts:
-        summary_parts.append("No recognized springdocker optimizations were detected.")
+        summary_parts.append("No recognized dockly optimizations were detected.")
 
     notes = [
         "Advisory static analysis only — regex/heuristic text matching, not a security or correctness audit.",
         "Hand-written or edited Dockerfiles may be misread; absence of a feature does not mean it is disabled at runtime.",
-        "For CI gates (hadolint, trivy, config SSOT drift), use: springdocker verify --check-config-drift",
+        "For CI gates (hadolint, trivy, config SSOT drift), use: dockly verify --check-config-drift",
     ]
     if "HEALTHCHECK" in text:
         features.append(

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (closes [#93](https://github.com/mnafshin/springdocker/issues/93))
+Accepted (closes [#93](https://github.com/mnafshin/dockly/issues/93))
 
 ## Context
 
@@ -27,7 +27,7 @@ workloads (batch, messaging-only, CLI) and can inflate custom runtimes without b
    - `spring-boot-starter-websocket`
 2. **When Web is not detected**, auto baseline is **empty** — rely on jdeps plus
    `must_have_modules_file` for reflection/dynamic-loading edge cases.
-3. **Explicit config always wins:** set `jlink_baseline_modules` in `.springdocker.toml` to override
+3. **Explicit config always wins:** set `jlink_baseline_modules` in `.dockly.toml` to override
    auto-detection, or `[]` to disable baseline injection entirely.
 4. **Omit** `jlink_baseline_modules` from config (default init template) to use auto-detection at
    `dockerfile generate` time — same pattern as actuator-aware `healthcheck_path`.
@@ -40,10 +40,10 @@ the config-driven CLI path resolves auto baseline from the project root.
 - Non-web Spring Boot services get leaner jlink runtimes by default.
 - Web/API services keep the defensive baseline without extra config.
 - Teams with unusual stacks can pin modules explicitly in config or `must_have_modules_file`.
-- `springdocker explain` continues to label baseline vs curated modules in output.
+- `dockly explain` continues to label baseline vs curated modules in output.
 
 ## References
 
-- [#93 Scope default jlink modules to Spring Web detection](https://github.com/mnafshin/springdocker/issues/93)
-- `src/springdocker/project_detect.py` — `has_spring_web_dependency`
-- `src/springdocker/services/dockerfile_service.py` — `_resolve_jlink_baseline_modules`
+- [#93 Scope default jlink modules to Spring Web detection](https://github.com/mnafshin/dockly/issues/93)
+- `src/dockly/project_detect.py` — `has_spring_web_dependency`
+- `src/dockly/services/dockerfile_service.py` — `_resolve_jlink_baseline_modules`

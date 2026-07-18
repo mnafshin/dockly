@@ -6,8 +6,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions, build_dockerfile
-from springdocker.dockerfile_profiles import (
+from dockly.dockerfile import DEFAULT_JVM_FLAGS, DockerfileOptions, build_dockerfile
+from dockly.dockerfile_profiles import (
     PROFILE_NAMES,
     apply_profile,
     apply_profile_for_java,

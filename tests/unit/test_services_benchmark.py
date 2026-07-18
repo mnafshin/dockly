@@ -8,7 +8,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.services.benchmark_service import (
+from dockly.services.benchmark_service import (
     analyze_csv,
     render_comparison,
     validate_reproducibility_with_legacy,

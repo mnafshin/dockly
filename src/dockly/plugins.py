@@ -8,12 +8,22 @@ from typing import Any, Protocol, cast
 
 from .dockerfile import DockerfileOptions
 
-DOCKERFILE_MUTATOR_GROUP = "springdocker.dockerfile_mutators"
-PROJECT_DETECTOR_GROUP = "springdocker.project_detectors"
-RECIPE_GROUP = "springdocker.recipes"
-VERIFIER_GROUP = "springdocker.verifiers"
-VERIFY_RENDERER_GROUP = "springdocker.verify_renderers"
-COMMAND_GROUP = "springdocker.commands"
+DOCKERFILE_MUTATOR_GROUP = "dockly.dockerfile_mutators"
+PROJECT_DETECTOR_GROUP = "dockly.project_detectors"
+RECIPE_GROUP = "dockly.recipes"
+VERIFIER_GROUP = "dockly.verifiers"
+VERIFY_RENDERER_GROUP = "dockly.verify_renderers"
+COMMAND_GROUP = "dockly.commands"
+
+# Legacy springdocker entry-point groups (accepted during deprecation window).
+_LEGACY_GROUPS = {
+    DOCKERFILE_MUTATOR_GROUP: "springdocker.dockerfile_mutators",
+    PROJECT_DETECTOR_GROUP: "springdocker.project_detectors",
+    RECIPE_GROUP: "springdocker.recipes",
+    VERIFIER_GROUP: "springdocker.verifiers",
+    VERIFY_RENDERER_GROUP: "springdocker.verify_renderers",
+    COMMAND_GROUP: "springdocker.commands",
+}
 
 
 class DockerfileMutator(Protocol):
@@ -37,16 +47,31 @@ class PluginRenderExecution:
 
 def _iter_entry_points(group: str) -> list[EntryPoint]:
     discovered = entry_points()
-    if hasattr(discovered, "select"):
-        selected = list(discovered.select(group=group))
-    else:
-        legacy = cast(dict[str, list[EntryPoint]], discovered)
-        selected = list(legacy.get(group, []))
+    groups = [group]
+    legacy = _LEGACY_GROUPS.get(group)
+    if legacy:
+        groups.append(legacy)
+    selected: list[EntryPoint] = []
+    seen_names: set[str] = set()
+    for g in groups:
+        if hasattr(discovered, "select"):
+            batch = list(discovered.select(group=g))
+        else:
+            legacy_map = cast(dict[str, list[EntryPoint]], discovered)
+            batch = list(legacy_map.get(g, []))
+        for entry in batch:
+            if entry.name in seen_names:
+                continue
+            seen_names.add(entry.name)
+            selected.append(entry)
     return sorted(selected, key=lambda entry: entry.name)
 
 
 def _plugins_disabled() -> bool:
-    return os.environ.get("SPRINGDOCKER_DISABLE_PLUGINS", "").lower() in {"1", "true", "yes", "on"}
+    for key in ("DOCKLY_DISABLE_PLUGINS", "SPRINGDOCKER_DISABLE_PLUGINS"):
+        if os.environ.get(key, "").lower() in {"1", "true", "yes", "on"}:
+            return True
+    return False
 
 
 def _to_callable(candidate: Any, method_name: str) -> Any:

@@ -11,7 +11,7 @@ from tests.test_support import ROOT, add_src_to_path
 
 add_src_to_path()
 
-from springdocker.services.verify_service import (
+from dockly.services.verify_service import (
     VerifyContext,
     VerifyOutcome,
     VerifyResult,
@@ -67,7 +67,7 @@ class VerifyServiceTests(unittest.TestCase):
     def test_run_verification_skips_external_tools_when_not_installed(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             skipped = {item.name: item for item in outcome.results if item.status == "skipped"}
             self.assertIn("hadolint", skipped)
@@ -84,7 +84,7 @@ class VerifyServiceTests(unittest.TestCase):
     def test_run_verification_marks_missing_sbom_as_failed(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             sbom = next(item for item in outcome.results if item.name == "sbom")
             self.assertEqual(sbom.status, "failed")
@@ -94,7 +94,7 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             sbom = next(item for item in outcome.results if item.name == "sbom")
             self.assertEqual(sbom.status, "passed")
@@ -104,7 +104,7 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "sbom.spdx.json").write_text("{not-json", encoding="utf-8")
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             sbom = next(item for item in outcome.results if item.name == "sbom")
             self.assertEqual(sbom.status, "failed")
@@ -114,7 +114,7 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "sbom.spdx.json").write_text(json.dumps({"name": "demo"}), encoding="utf-8")
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             sbom = next(item for item in outcome.results if item.name == "sbom")
             self.assertEqual(sbom.status, "failed")
@@ -126,8 +126,8 @@ class VerifyServiceTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
 
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
-                patch("springdocker.services.verify_service.subprocess.run", return_value=_Completed()),
+                patch("dockly.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
+                patch("dockly.services.verify_service.subprocess.run", return_value=_Completed()),
             ):
                 outcome = run_verification(_context(root, image="demo:latest"))
             hadolint = next(item for item in outcome.results if item.name == "hadolint")
@@ -190,8 +190,8 @@ class VerifyServiceTests(unittest.TestCase):
                 smoke_url=None,
             )
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
-                patch("springdocker.services.verify_service.subprocess.run", return_value=_Completed()) as run_mock,
+                patch("dockly.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
+                patch("dockly.services.verify_service.subprocess.run", return_value=_Completed()) as run_mock,
             ):
                 run_verification(context)
             trivy_calls = [call.args[0] for call in run_mock.call_args_list if call.args[0][0] == "trivy"]
@@ -206,9 +206,9 @@ class VerifyServiceTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
 
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
+                patch("dockly.services.verify_service.shutil.which", return_value="/usr/bin/fake"),
                 patch(
-                    "springdocker.services.verify_service.subprocess.run",
+                    "dockly.services.verify_service.subprocess.run",
                     return_value=_Completed(returncode=1, stderr="hadolint rule violated"),
                 ),
             ):
@@ -223,9 +223,9 @@ class VerifyServiceTests(unittest.TestCase):
             root = Path(td)
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.services.verify_service.urllib.request.urlopen",
+                    "dockly.services.verify_service.urllib.request.urlopen",
                     return_value=_urlopen_response(body=b'{"status":"UP"}'),
                 ),
             ):
@@ -239,9 +239,9 @@ class VerifyServiceTests(unittest.TestCase):
             root = Path(td)
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.services.verify_service.urllib.request.urlopen",
+                    "dockly.services.verify_service.urllib.request.urlopen",
                     return_value=_urlopen_response(body=b"ok"),
                 ),
             ):
@@ -254,9 +254,9 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.services.verify_service.urllib.request.urlopen",
+                    "dockly.services.verify_service.urllib.request.urlopen",
                     return_value=_urlopen_response(status=503, body=b"down"),
                 ),
             ):
@@ -269,9 +269,9 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.services.verify_service.urllib.request.urlopen",
+                    "dockly.services.verify_service.urllib.request.urlopen",
                     side_effect=urllib.error.URLError("connection refused"),
                 ),
             ):
@@ -284,9 +284,9 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.services.verify_service.urllib.request.urlopen",
+                    "dockly.services.verify_service.urllib.request.urlopen",
                     side_effect=TimeoutError("timed out"),
                 ),
             ):
@@ -305,8 +305,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("acme", lambda: verify)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:acme")
@@ -324,8 +324,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("policy", lambda: PolicyVerifier)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:policy")
@@ -342,8 +342,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("broken", broken_loader)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:broken")
@@ -360,8 +360,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("invalid", lambda: verify)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:invalid")
@@ -378,8 +378,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("invalid-dict", lambda: verify)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:invalid-dict")
@@ -396,8 +396,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("broken-shape", lambda: BrokenPlugin)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:broken-shape")
@@ -414,8 +414,8 @@ class VerifyServiceTests(unittest.TestCase):
 
             entry = _FakeEntry("bad-return", lambda: verify)
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
-                patch("springdocker.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.iter_verifier_entry_points", return_value=[entry]),
             ):
                 outcome = run_verification(_context(root))
             plugin = next(item for item in outcome.results if item.name == "plugin:bad-return")
@@ -426,7 +426,7 @@ class VerifyServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 outcome = run_verification(_context(root))
             self.assertIn('"overall": "passed"', render_verify_json(outcome))
             self.assertIn("<testsuite", render_verify_junit(outcome))
@@ -454,7 +454,7 @@ class VerifyServiceTests(unittest.TestCase):
             root = Path(td)
             for name in ("pom.xml", "build.gradle", "gradlew"):
                 (root / name).write_text((fixture / name).read_text(encoding="utf-8"), encoding="utf-8")
-            (root / ".springdocker.toml").write_text('[project]\nbuild_tool = "maven"\n', encoding="utf-8")
+            (root / ".dockly.toml").write_text('[project]\nbuild_tool = "maven"\n', encoding="utf-8")
             dockerfile = root / "Dockerfile.generated"
             dockerfile.write_text("FROM scratch\n", encoding="utf-8")
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
@@ -463,13 +463,13 @@ class VerifyServiceTests(unittest.TestCase):
                 raise AssertionError("inspect_project should not run when config defines build_tool")
 
             with (
-                patch("springdocker.project_detect.inspect_project", side_effect=_unexpected_inspect),
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.project_detect.inspect_project", side_effect=_unexpected_inspect),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 patch(
-                    "springdocker.config_audit.run_config_verify_checks",
+                    "dockly.config_audit.run_config_verify_checks",
                     return_value=[("config-drift", "passed", "ok")],
                 ),
-                patch("springdocker.config_audit.load_config_audit") as load_audit,
+                patch("dockly.config_audit.load_config_audit") as load_audit,
             ):
                 load_audit.return_value = object()
                 outcome = run_verification(

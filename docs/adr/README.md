@@ -1,6 +1,6 @@
 # ADR index
 
-Architecture decisions for **dockly** (imported from `springdocker`; product vision in [ADR 0011](0011-dockly-product-vision.md)). User guides live under [`docs/`](../) (`adopt`, `benchmarks`, `jvm`, …) — not in this index.
+Architecture decisions for **dockly** (imported from `dockly`; product vision in [ADR 0011](0011-dockly-product-vision.md)). User guides live under [`docs/`](../) (`adopt`, `benchmarks`, `jvm`, …) — not in this index.
 
 ## Decisions
 

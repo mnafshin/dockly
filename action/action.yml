@@ -1,6 +1,6 @@
-name: springdocker Dockerfile SSOT
+name: dockly Dockerfile SSOT
 description: Generate and verify Spring Boot Dockerfiles; fail on config drift.
-author: springdocker contributors
+author: dockly contributors
 branding:
   icon: box
   color: blue
@@ -18,8 +18,8 @@ inputs:
     description: Override build tool (maven or gradle); empty = auto-detect
     required: false
     default: ""
-  springdocker-version:
-    description: PyPI version of springdocker to install (empty = latest)
+  dockly-version:
+    description: PyPI version of dockly to install (empty = latest)
     required: false
     default: ""
   python-version:
@@ -27,11 +27,11 @@ inputs:
     required: false
     default: "3.11"
   generate:
-    description: Run springdocker dockerfile generate before verify
+    description: Run dockly dockerfile generate before verify
     required: false
     default: "true"
   check-config-drift:
-    description: Run springdocker verify --check-config-drift
+    description: Run dockly verify --check-config-drift
     required: false
     default: "true"
 
@@ -43,16 +43,16 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install springdocker
+    - name: Install dockly
       shell: bash
       run: |
         set -euo pipefail
-        if [ -n "${{ inputs.springdocker-version }}" ]; then
-          python3 -m pip install --upgrade "springdocker==${{ inputs.springdocker-version }}"
+        if [ -n "${{ inputs.dockly-version }}" ]; then
+          python3 -m pip install --upgrade "dockly==${{ inputs.dockly-version }}"
         else
-          python3 -m pip install --upgrade springdocker
+          python3 -m pip install --upgrade dockly
         fi
-        springdocker --help >/dev/null
+        dockly --help >/dev/null
 
     - name: Generate Dockerfile
       if: ${{ inputs.generate == 'true' }}
@@ -63,7 +63,7 @@ runs:
         if [ -n "${{ inputs.build-tool }}" ]; then
           EXTRA+=(--build-tool "${{ inputs.build-tool }}")
         fi
-        springdocker dockerfile generate \
+        dockly dockerfile generate \
           --project-root "${{ inputs.project-root }}" \
           --output "${{ inputs.dockerfile }}" \
           "${EXTRA[@]}"
@@ -77,7 +77,7 @@ runs:
         if [ -n "${{ inputs.build-tool }}" ]; then
           EXTRA+=(--build-tool "${{ inputs.build-tool }}")
         fi
-        springdocker verify \
+        dockly verify \
           --project-root "${{ inputs.project-root }}" \
           --dockerfile "${{ inputs.dockerfile }}" \
           --check-config-drift \

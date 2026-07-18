@@ -4,11 +4,11 @@ import shutil
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from springdocker.config import DockerfileGenerateConfig
-from springdocker.dockerfile import BUILTIN_RECIPES, DockerfileOptions, build_dockerfile
-from springdocker.java_features import jep483_supported
-from springdocker.runtime_images import DEFAULT_BASE_IMAGE_VARIANTS, variant_slug
-from springdocker.services import dockerfile_service
+from dockly.config import DockerfileGenerateConfig
+from dockly.dockerfile import BUILTIN_RECIPES, DockerfileOptions, build_dockerfile
+from dockly.java_features import jep483_supported
+from dockly.runtime_images import DEFAULT_BASE_IMAGE_VARIANTS, variant_slug
+from dockly.services import dockerfile_service
 
 EXPECTED_CSV_HEADER = (
     "date,scenario,variant,run,build_ms,image_bytes,startup_ms,status,notes,host,docker_version,run_profile,"
@@ -21,34 +21,34 @@ NATIVE_SCENARIO_README = """\
 This scenario is generated as **experimental scaffold output only**.
 
 - The Dockerfile uses the `native-aot` recipe preset.
-- `springdocker` does not ship a production native-image workflow yet.
+- `dockly` does not ship a production native-image workflow yet.
 - The internal benchmark runner skips this scenario by default (`--skip-native`).
 
-See `docs/native-aot.md` in the springdocker repository for scaffold status.
+See `docs/native-aot.md` in the dockly repository for scaffold status.
 """
 
 EXAMPLE_DOCKERFILES_README = """\
 # Example generated Dockerfiles
 
-Versioned reference output from `springdocker` for the three built-in recipe presets on this sample project.
-Recipe files inherit `[dockerfile]` settings from `.springdocker.toml` (only `recipe` varies per file).
+Versioned reference output from `dockly` for the three built-in recipe presets on this sample project.
+Recipe files inherit `[dockerfile]` settings from `.dockly.toml` (only `recipe` varies per file).
 
 Regenerate together with benchmark assets:
 
 ```bash
-springdocker benchmark generate --project-root . --java-version 25
+dockly benchmark generate --project-root . --java-version 25
 ```
 
 Scenario variant Dockerfiles live under `benchmarks/<scenario>/variants/` (gitignored, same command).
 
-Source: https://github.com/mnafshin/springdocker
+Source: https://github.com/mnafshin/dockly
 """
 
 EXAMPLE_RECIPE_DOCKERFILES_README = """\
 # Recipe presets
 
-Reference Dockerfiles for each built-in `springdocker` recipe on the sample project's build tool.
-Options come from the project's `.springdocker.toml` `[dockerfile]` section (runtime base, jlink, SBOM,
+Reference Dockerfiles for each built-in `dockly` recipe on the sample project's build tool.
+Options come from the project's `.dockly.toml` `[dockerfile]` section (runtime base, jlink, SBOM,
 AppCDS, pinned digests, and so on); only the `recipe` field changes per file.
 
 | File | Recipe | Purpose |
@@ -75,16 +75,16 @@ speed matters most.
 Regenerate with:
 
 ```bash
-springdocker benchmark generate --project-root . --java-version 25
+dockly benchmark generate --project-root . --java-version 25
 ```
 
 Select a recipe when generating ad hoc output:
 
 ```bash
-springdocker generate --project-root . --recipe spring-aot
+dockly generate --project-root . --recipe spring-aot
 ```
 
-Source: https://github.com/mnafshin/springdocker
+Source: https://github.com/mnafshin/dockly
 """
 
 

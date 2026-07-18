@@ -1,11 +1,11 @@
-# Adopt springdocker (config-first)
+# Adopt dockly (config-first)
 
 Two surfaces — pick one (or start with the plugin and optionally export to the CLI later):
 
 | Need | Use | SSOT |
 |---|---|---|
 | Dockerfile from Maven config (JDK only) | [Maven builder plugin](../integrations/maven-plugin/README.md) | `pom.xml` plugin configuration ([ADR 0010](adr/0010-pom-gradle-ssot-java-builder.md)) |
-| Full toolkit (setup, profiles, benchmarks, Action) | Python CLI (`pipx install springdocker`) | `.springdocker.toml` ([ADR 0005](adr/0005-config-first-dockerfile-generation.md)) |
+| Full toolkit (setup, profiles, benchmarks, Action) | Python CLI (`pipx install dockly`) | `.dockly.toml` ([ADR 0005](adr/0005-config-first-dockerfile-generation.md)) |
 
 Related: [CLI config-first](../cli/README.md#config-first-workflow) · [POSITIONING](POSITIONING.md)
 
@@ -13,43 +13,43 @@ Related: [CLI config-first](../cli/README.md#config-first-workflow) · [POSITION
 
 | Artifact | Role |
 |---|---|
-| `.springdocker.toml` | **Strategy** — reviewable decisions (runtime, jlink, JVM flags, SBOM, …) |
+| `.dockly.toml` | **Strategy** — reviewable decisions (runtime, jlink, JVM flags, SBOM, …) |
 | `Dockerfile.generated` | **Output** — deterministic artifact from config |
-| `springdocker setup` | **One-shot onboarding** — detect, write config (`production-balanced`), generate; add `--ci` for GitHub Actions |
-| `springdocker setup --ci-only` | Write `.github/workflows/dockerfile.yml` only |
-| `springdocker configure` | Interactive wizard that **writes config** |
-| `springdocker dockerfile generate` | Non-interactive generation for local use and CI |
+| `dockly setup` | **One-shot onboarding** — detect, write config (`production-balanced`), generate; add `--ci` for GitHub Actions |
+| `dockly setup --ci-only` | Write `.github/workflows/dockerfile.yml` only |
+| `dockly configure` | Interactive wizard that **writes config** |
+| `dockly dockerfile generate` | Non-interactive generation for local use and CI |
 
-Precedence: `CLI flags > .springdocker.toml > built-in defaults`.
+Precedence: `CLI flags > .dockly.toml > built-in defaults`.
 
 Set `java_version` to your toolchain (**17+**). Undetected fallback is **17**. JEP 483 AOT requires **24+** — see [jvm.md](jvm.md).
 
 ## Quickstart (Python CLI)
 
 ```bash
-pipx install springdocker
+pipx install dockly
 cd /path/to/your-spring-boot-app
-springdocker setup --ci
-# optional: springdocker setup --verify
-# existing project: springdocker setup --ci-only
+dockly setup --ci
+# optional: dockly setup --verify
+# existing project: dockly setup --ci-only
 ```
 
 Or step-by-step:
 
 ```bash
-springdocker doctor --project-root .
-springdocker init --project-root . --build-tool maven
-springdocker configure --project-root . --force
-springdocker dockerfile generate --project-root .
-springdocker verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
-springdocker setup --ci-only
+dockly doctor --project-root .
+dockly init --project-root . --build-tool maven
+dockly configure --project-root . --force
+dockly dockerfile generate --project-root .
+dockly verify --project-root . --dockerfile Dockerfile.generated --check-config-drift
+dockly setup --ci-only
 ```
 
-Or: `springdocker setup --interactive` / `springdocker init --project-root . --build-tool maven --interactive`.
+Or: `dockly setup --interactive` / `dockly init --project-root . --build-tool maven --interactive`.
 
 ## Quickstart (Maven builder plugin)
 
-No Python. POM `<configuration>` is SSOT — the plugin does **not** read `.springdocker.toml`.
+No Python. POM `<configuration>` is SSOT — the plugin does **not** read `.dockly.toml`.
 
 ```bash
 cd integrations/maven-plugin && mvn clean install   # until Central publish
@@ -76,31 +76,31 @@ cd integrations/maven-plugin && mvn clean install   # until Central publish
 ```
 
 ```bash
-mvn springdocker:generate
-mvn springdocker:verify
+mvn dockly:generate
+mvn dockly:verify
 # optional bridge to CLI:
-mvn springdocker:export-config -Dspringdocker.force=true
+mvn dockly:export-config -Dspringdocker.force=true
 ```
 
 Details: [`integrations/maven-plugin/README.md`](../integrations/maven-plugin/README.md).
 
-Platform teams can seed CLI config from the sample’s [`.springdocker.toml`](https://github.com/mnafshin/java-spring-docker-sample/blob/main/.springdocker.toml).
+Platform teams can seed CLI config from the sample’s [`.dockly.toml`](https://github.com/mnafshin/java-spring-docker-sample/blob/main/.dockly.toml).
 
 ### Contributor / evidence (clone)
 
 ```bash
-python3 -m pip install -e ".[dev]"   # or springdocker[benchmark] for evidence runs
+python3 -m pip install -e ".[dev]"   # or dockly[benchmark] for evidence runs
 python scripts/checkout_sample.py    # fixtures → CLI regression; sample → benchmarks (Java 25)
 ```
 
 ## Daily workflow
 
-After config exists: `springdocker dockerfile generate --project-root .`
+After config exists: `dockly dockerfile generate --project-root .`
 
-Permanent strategy changes: edit `.springdocker.toml` or `springdocker configure --force`.
+Permanent strategy changes: edit `.dockly.toml` or `dockly configure --force`.
 
-Advisory audit: `springdocker explain Dockerfile.generated --format json --config-aware`  
-CI gate: `springdocker verify --check-config-drift` (below).
+Advisory audit: `dockly explain Dockerfile.generated --format json --config-aware`  
+CI gate: `dockly verify --check-config-drift` (below).
 
 ### PR checklist
 
@@ -110,7 +110,7 @@ CI gate: `springdocker verify --check-config-drift` (below).
 
 ## CI pipeline
 
-Prefer the composite Action (written by `springdocker setup --ci`):
+Prefer the composite Action (written by `dockly setup --ci`):
 
 ```yaml
 # .github/workflows/dockerfile.yml  (generated by setup --ci)
@@ -123,11 +123,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mnafshin/springdocker/action@v1
+      - uses: mnafshin/dockly/action@v1
         with:
           project-root: .
           dockerfile: Dockerfile.generated
-          # optional: springdocker-version: "1.2.0"
+          # optional: dockly-version: "1.2.0"
 ```
 
 Action docs: [`action/README.md`](../action/README.md).
@@ -145,9 +145,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: python3 -m pip install springdocker
-      - run: springdocker dockerfile generate --project-root .
-      - run: springdocker verify --project-root . --dockerfile Dockerfile.generated --check-config-drift --format json
+      - run: python3 -m pip install dockly
+      - run: dockly dockerfile generate --project-root .
+      - run: dockly verify --project-root . --dockerfile Dockerfile.generated --check-config-drift --format json
 ```
 
 Ensure `sbom.spdx.json` exists when `include_embedded_sbom = true`.
@@ -164,14 +164,14 @@ Ensure `sbom.spdx.json` exists when `include_embedded_sbom = true`.
 | `compliance` | SBOM, pins, OCI labels, reproducible controls |
 | `custom` | Wizard asks each option |
 
-Overlays: `src/springdocker/dockerfile_profiles.py`. JVM flags: [jvm.md](jvm.md).
+Overlays: `src/dockly/dockerfile_profiles.py`. JVM flags: [jvm.md](jvm.md).
 
 ## Platform playbook
 
-1. Publish an org golden `.springdocker.toml`
+1. Publish an org golden `.dockly.toml`
 2. CI with `--check-config-drift` on PRs
 3. Document allowed one-off CLI overrides
-4. Optional later: org policy overlay ([#123](https://github.com/mnafshin/springdocker/issues/123))
+4. Optional later: org policy overlay ([#123](https://github.com/mnafshin/dockly/issues/123))
 
 ## FAQ
 
@@ -189,7 +189,7 @@ Overlays: `src/springdocker/dockerfile_profiles.py`. JVM flags: [jvm.md](jvm.md)
 
 | Legacy | Replacement |
 |---|---|
-| `tools/dockerfile_wizard.py` | `springdocker configure` + `dockerfile generate` |
+| `tools/dockerfile_wizard.py` | `dockly configure` + `dockerfile generate` |
 | `legacy_scripts` / `--use-legacy-scripts` | Internal runner (default); removed in v2.0.0 |
 
 ## Benchmarks

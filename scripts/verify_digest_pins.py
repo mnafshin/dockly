@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify springdocker base-image digest pins resolve in upstream registries."""
+"""Verify dockly base-image digest pins resolve in upstream registries."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from springdocker.digest_pins import IMAGE_PINS, verify_all_image_pins
+from dockly.digest_pins import IMAGE_PINS, verify_all_image_pins
 
 
 def main() -> int:

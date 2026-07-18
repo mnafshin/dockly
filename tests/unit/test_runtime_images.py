@@ -6,7 +6,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.runtime_images import (
+from dockly.runtime_images import (
     DEFAULT_BASE_IMAGE_VARIANTS,
     normalize_runtime_image,
     parse_base_image_variants,

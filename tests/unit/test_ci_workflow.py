@@ -8,35 +8,35 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.ci_workflow import (
+from dockly.ci_workflow import (
     action_uses_ref,
     render_dockerfile_ssot_workflow,
     write_dockerfile_ssot_workflow,
 )
-from springdocker.cli import build_parser, main
-from springdocker.commands import cmd_setup
+from dockly.cli import build_parser, main
+from dockly.commands import cmd_setup
 
 
 class CiWorkflowTests(unittest.TestCase):
     def test_action_uses_ref_major(self) -> None:
-        self.assertEqual(action_uses_ref(package_version="1.2.0"), "mnafshin/springdocker/action@v1")
-        self.assertEqual(action_uses_ref(package_version="2.0.0"), "mnafshin/springdocker/action@v2")
+        self.assertEqual(action_uses_ref(package_version="1.2.0"), "mnafshin/dockly/action@v1")
+        self.assertEqual(action_uses_ref(package_version="2.0.0"), "mnafshin/dockly/action@v2")
 
     def test_render_includes_action_and_pin(self) -> None:
         text = render_dockerfile_ssot_workflow(
             dockerfile="Dockerfile.generated",
             build_tool="maven",
-            springdocker_version="1.2.0",
+            dockly_version="1.2.0",
         )
-        self.assertIn("mnafshin/springdocker/action@v1", text)
-        self.assertIn('springdocker-version: "1.2.0"', text)
+        self.assertIn("mnafshin/dockly/action@v1", text)
+        self.assertIn('dockly-version: "1.2.0"', text)
         self.assertIn("build-tool: maven", text)
         self.assertIn("Dockerfile.generated", text)
 
     def test_render_omits_version_pin_by_default(self) -> None:
         text = render_dockerfile_ssot_workflow(dockerfile="Dockerfile.generated")
-        self.assertIn("mnafshin/springdocker/action@v1", text)
-        self.assertNotIn("springdocker-version:", text)
+        self.assertIn("mnafshin/dockly/action@v1", text)
+        self.assertNotIn("dockly-version:", text)
 
     def test_write_workflow_creates_file(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -66,7 +66,7 @@ class SetupCiTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            code = cmd_setup(root, None, root / ".springdocker.toml", ci=True)
+            code = cmd_setup(root, None, root / ".dockly.toml", ci=True)
             self.assertEqual(code, 0)
             workflow = root / ".github" / "workflows" / "dockerfile.yml"
             self.assertTrue(workflow.is_file())
@@ -75,10 +75,10 @@ class SetupCiTests(unittest.TestCase):
     def test_setup_ci_only(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            code = cmd_setup(root, None, root / ".springdocker.toml", ci_only=True)
+            code = cmd_setup(root, None, root / ".dockly.toml", ci_only=True)
             self.assertEqual(code, 0)
             self.assertTrue((root / ".github" / "workflows" / "dockerfile.yml").is_file())
-            self.assertFalse((root / ".springdocker.toml").exists())
+            self.assertFalse((root / ".dockly.toml").exists())
 
     def test_setup_ci_only_cli(self) -> None:
         with tempfile.TemporaryDirectory() as td:

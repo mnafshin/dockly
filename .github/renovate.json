@@ -16,7 +16,7 @@
     },
     {
       "description": "Temurin JDK digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"temurin-jdk-(?<currentValue>\\d+)\", \"registry-1.docker.io\", \"library/eclipse-temurin\", \"\\d+-jdk\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -26,7 +26,7 @@
     },
     {
       "description": "Temurin JRE digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"temurin-jre-(?<currentValue>\\d+)\", \"registry-1.docker.io\", \"library/eclipse-temurin\", \"\\d+-jre\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -36,7 +36,7 @@
     },
     {
       "description": "Distroless Java digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"distroless-java-(?<currentValue>\\d+)\", \"gcr.io\", \"distroless/java\\d+-debian12\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -46,7 +46,7 @@
     },
     {
       "description": "Distroless base debian12 digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"distroless-base-debian12\", \"gcr.io\", \"distroless/base-debian12\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -56,7 +56,7 @@
     },
     {
       "description": "Distroless base debian13 digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"distroless-base-debian13\", \"gcr.io\", \"distroless/base-debian13\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -66,7 +66,7 @@
     },
     {
       "description": "Debian slim digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"debian-bookworm-slim\", \"registry-1.docker.io\", \"library/debian\", \"bookworm-slim\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -76,7 +76,7 @@
     },
     {
       "description": "Ubuntu noble digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"ubuntu-noble\", \"registry-1.docker.io\", \"library/ubuntu\", \"24.04\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],
@@ -86,7 +86,7 @@
     },
     {
       "description": "Alpine digests in digest_pins.py",
-      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "fileMatch": ["^src/dockly/digest_pins\\.py$"],
       "matchStrings": [
         "ImagePin\\(\"alpine-3-21\", \"registry-1.docker.io\", \"library/alpine\", \"3.21\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
       ],

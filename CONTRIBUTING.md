@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for helping improve `springdocker`.
+Thanks for helping improve `dockly`.
 
 ## Project naming
 
-The installable CLI, GitHub repository, and PyPI package are all **springdocker**. The benchmark sample lives in [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) and uses the Maven/Gradle artifact `io.github.mnafshin:java-spring-docker` for historical reasons — it is not the CLI package name. See the [naming table in README.md](README.md#project-naming).
+The installable CLI, GitHub repository, and PyPI package are all **dockly**. The benchmark sample lives in [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) and uses the Maven/Gradle artifact `io.github.mnafshin:java-spring-docker` for historical reasons — it is not the CLI package name. See the [naming table in README.md](README.md#project-naming).
 
 ## Local setup
 
@@ -35,11 +35,11 @@ Mypy runs on `src/` with gradual strictness — baseline settings plus per-modul
 ## Coverage policy
 
 Local `pytest` and the CI `coverage` job enforce the same gate: **≥80% line coverage** on the entire
-`springdocker` package (`pyproject.toml` → `[tool.pytest.ini_options]` → `addopts`). The README coverage badge links here.
+`dockly` package (`pyproject.toml` → `[tool.pytest.ini_options]` → `addopts`). The README coverage badge links here.
 
 - CI matrix jobs run one suite at a time (`unit`, `integration`, `e2e`, `benchmark`) with
   `--cov-fail-under=0` because partial runs cannot satisfy the global threshold.
-- No modules are intentionally omitted from coverage measurement; every file under `src/springdocker/`
+- No modules are intentionally omitted from coverage measurement; every file under `src/dockly/`
   counts toward the gate.
 - Add or extend tests when your change touches untested paths — do not lower the threshold to land code.
 
@@ -70,7 +70,7 @@ python scripts/docker_smoke_build.py
 
 The `consumer-smoke-petclinic` workflow runs `python scripts/consumer_smoke_petclinic.py` against a **pinned**
 [`spring-projects/spring-petclinic`](https://github.com/spring-projects/spring-petclinic) commit. It exercises
-the documented onboarding path (`springdocker setup` → `verify --check-config-drift`) and then performs a real `docker build` plus actuator readiness on port 8080.
+the documented onboarding path (`dockly setup` → `verify --check-config-drift`) and then performs a real `docker build` plus actuator readiness on port 8080.
 
 Pinned upstream revision: `scripts/consumer_smoke_petclinic.manifest.json`.
 
@@ -78,7 +78,7 @@ The smoke run selects the **`build-speed`** setup profile (debian-slim, no jlink
 sets are application-specific; `production-balanced` + jlink is validated separately by the
 `docker-smoke` job on the pinned [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) checkout.
 
-**Local run** (requires Docker, git, and `springdocker` on `PATH`):
+**Local run** (requires Docker, git, and `dockly` on `PATH`):
 
 ```bash
 pip install -e .
@@ -91,9 +91,9 @@ Do not pipe this script through `tee` without `set -o pipefail` — a failed `do
 PyPI-style install (no editable checkout):
 
 ```bash
-pipx install springdocker
+pipx install dockly
 export DOCKER_BUILDKIT=1
-python scripts/consumer_smoke_petclinic.py --springdocker-cmd springdocker
+python scripts/consumer_smoke_petclinic.py --springdocker-cmd dockly
 ```
 
 Useful flags while iterating:
@@ -121,7 +121,7 @@ The `supply-chain` job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 | SPDX SBOM | Uploaded as a workflow artifact (`sbom-spdx`) |
 | Trivy filesystem scan | **Blocking** on unfixed **CRITICAL** vulnerabilities in the repository tree |
 
-HIGH and lower severities do not fail that job. To gate Dockerfile build context on HIGH+CRITICAL locally or in your service pipeline, install `trivy` and run `springdocker verify` (see [`cli/README.md`](cli/README.md#verify-command) and [`docs/security.md`](docs/security.md)).
+HIGH and lower severities do not fail that job. To gate Dockerfile build context on HIGH+CRITICAL locally or in your service pipeline, install `trivy` and run `dockly verify` (see [`cli/README.md`](cli/README.md#verify-command) and [`docs/security.md`](docs/security.md)).
 
 If a CRITICAL finding is a false positive or has no fix upstream, document the exception in `.trivyignore` and link the advisory in the pull request.
 
@@ -135,7 +135,7 @@ If a CRITICAL finding is a false positive or has no fix upstream, document the e
 
 ## Code layout
 
-- `src/springdocker/` for CLI and core logic
+- `src/dockly/` for CLI and core logic
 - `tests/unit/` for pure unit coverage
 - `tests/integration/` for command and flow coverage
 - `tests/e2e/` for end-to-end CLI flows

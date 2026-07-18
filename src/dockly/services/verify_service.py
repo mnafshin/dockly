@@ -154,14 +154,14 @@ def _verify_plugin_entry(context: VerifyContext, entry: Any) -> tuple[VerifyStat
 
 
 def _verify_config_checks(context: VerifyContext) -> list[VerifyResult]:
-    from ..config import _resolve_build_tool, load_config
+    from ..config import _resolve_build_tool, find_config_path, load_config
     from ..config_audit import load_config_audit
     from ..project_detect import inspect_project
 
     started = time.monotonic()
     build_tool = context.build_tool
     if build_tool is None:
-        config_path = context.project_root / ".springdocker.toml"
+        config_path = find_config_path(context.project_root)
         if config_path.is_file():
             loaded = load_config(config_path)
             build_tool = _resolve_build_tool(None, loaded, "project")
@@ -186,7 +186,7 @@ def _verify_config_checks(context: VerifyContext) -> list[VerifyResult]:
             VerifyResult(
                 name="config-drift",
                 status="skipped",
-                detail="no .springdocker.toml present for config audit",
+                detail="no .dockly.toml (or legacy .springdocker.toml) present for config audit",
                 duration_ms=duration_ms,
             )
         ]
@@ -275,7 +275,7 @@ def render_verify_junit(outcome: VerifyOutcome) -> str:
             failures += 1
         if item.status == "skipped":
             skipped += 1
-        case = [f'<testcase classname="springdocker.verify" name="{escape(item.name)}" time="{item.duration_ms / 1000:.3f}">']
+        case = [f'<testcase classname="dockly.verify" name="{escape(item.name)}" time="{item.duration_ms / 1000:.3f}">']
         if item.status == "failed":
             case.append(f'<failure message="{escape(item.detail)}"/>')
         elif item.status == "skipped":
@@ -284,7 +284,7 @@ def render_verify_junit(outcome: VerifyOutcome) -> str:
         cases.append("".join(case))
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
-        f'<testsuite name="springdocker.verify" tests="{len(outcome.results)}" failures="{failures}" skipped="{skipped}">'
+        f'<testsuite name="dockly.verify" tests="{len(outcome.results)}" failures="{failures}" skipped="{skipped}">'
         + "".join(cases)
         + "</testsuite>"
     )
@@ -305,7 +305,7 @@ def render_verify_sarif(outcome: VerifyOutcome) -> str:
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "runs": [
             {
-                "tool": {"driver": {"name": "springdocker verify"}},
+                "tool": {"driver": {"name": "dockly verify"}},
                 "results": results,
             }
         ],

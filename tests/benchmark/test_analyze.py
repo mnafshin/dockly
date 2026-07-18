@@ -9,7 +9,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.analyze import format_json, format_table, summarize_csv
+from dockly.analyze import format_json, format_table, summarize_csv
 
 
 class AnalyzeTests(unittest.TestCase):

@@ -3,11 +3,11 @@
 This repository uses scenario-based Docker benchmarks against the pinned
 [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample)
 checkout (`python scripts/checkout_sample.py` → `samples/java-spring-docker/`).
-Benchmark commands are optional evidence workflows and require `springdocker[benchmark]`.
+Benchmark commands are optional evidence workflows and require `dockly[benchmark]`.
 
 ## Scenario index
 
-Authoritative list under the sample’s `benchmarks/` directory. Regenerate with `springdocker benchmark generate`. Scenario **04** (native) is listed before **05** (AppCDS) by id; the generator emits AppCDS before the native scaffold.
+Authoritative list under the sample’s `benchmarks/` directory. Regenerate with `dockly benchmark generate`. Scenario **04** (native) is listed before **05** (AppCDS) by id; the generator emits AppCDS before the native scaffold.
 
 | ID | Directory | Purpose | Variants | Further reading |
 |---|---|---|---|---|
@@ -18,7 +18,7 @@ Authoritative list under the sample’s `benchmarks/` directory. Regenerate with
 | 05 | `05-appcds` | AppCDS shared archive | `with-appcds`, `without-appcds` | [jvm.md](jvm.md) |
 
 ```bash
-springdocker benchmark analyze --project-root samples/java-spring-docker \
+dockly benchmark analyze --project-root samples/java-spring-docker \
   benchmarks/01-custom-jre-jlink/results/raw.csv --format table
 ```
 
@@ -50,7 +50,7 @@ Generated benchmark assets are **not committed** except where CI or docs explici
 
 | Artifact | Committed? | Purpose |
 |---|---|---|
-| `benchmarks/*/variants/` | No | Regenerate with `springdocker benchmark generate`. |
+| `benchmarks/*/variants/` | No | Regenerate with `dockly benchmark generate`. |
 | `benchmarks/*/results/raw.csv` | No (except scenario 03 sample file) | Local/CI run output. |
 | `benchmarks/04-native-benchmark/Dockerfile` | No | Native scaffold; generator-owned. |
 | `benchmarks/03-base-image-choice/results/raw.csv` | Yes | Pinned sample runs fed to the CI regression gate. |
@@ -71,7 +71,7 @@ See the sample’s [`benchmarks/README.md`](https://github.com/mnafshin/java-spr
 | File | Role |
 |---|---|
 | `03-base-image-choice/results/raw.csv` | Pinned sample benchmark rows (input). |
-| `03-base-image-choice/results/baseline.json` | Expected `springdocker benchmark analyze` summary for that CSV (source of truth). |
+| `03-base-image-choice/results/baseline.json` | Expected `dockly benchmark analyze` summary for that CSV (source of truth). |
 | `03-base-image-choice/results/baseline.manifest.json` | Regeneration command and provenance metadata. |
 
 ### What CI does
@@ -89,13 +89,13 @@ CI does **not** execute Docker builds for this gate. The pinned CSV is sample ev
 After an intentional benchmark run or analyzer change (in the sample checkout or clone):
 
 ```bash
-python scripts/checkout_sample.py   # from springdocker root, if needed
+python scripts/checkout_sample.py   # from dockly root, if needed
 
 # 1. Update raw.csv (typically from a local benchmark run)
-springdocker benchmark run --project-root samples/java-spring-docker --profile quick
+dockly benchmark run --project-root samples/java-spring-docker --profile quick
 
 # 2. Regenerate baseline.json from the CSV
-springdocker benchmark analyze \
+dockly benchmark analyze \
   --project-root samples/java-spring-docker \
   benchmarks/03-base-image-choice/results/raw.csv \
   --format json \
@@ -105,7 +105,7 @@ springdocker benchmark analyze \
 cd samples/java-spring-docker   # or the sample clone
 git add benchmarks/03-base-image-choice/results/raw.csv \
         benchmarks/03-base-image-choice/results/baseline.json
-# after push: update scripts/java_spring_docker_sample.manifest.json ref in springdocker
+# after push: update scripts/java_spring_docker_sample.manifest.json ref in dockly
 ```
 
 Do not commit `baseline.json` without the matching `raw.csv`. Other scenarios keep `results/` gitignored; scenario 03 is the sole CI regression anchor today.
@@ -142,7 +142,7 @@ Warmup runs are optional and are executed before recording rows; they are exclud
 
 ## Statistical handling
 
-`springdocker benchmark analyze` summarizes the raw CSV with:
+`dockly benchmark analyze` summarizes the raw CSV with:
 
 - mean build time
 - build-time standard deviation
@@ -191,7 +191,7 @@ Pinned CI regression evidence (scenario 03 base-image choice) lives in
 
 ## Reproducibility controls
 
-`springdocker benchmark run` supports optional isolation controls for more stable comparisons:
+`dockly benchmark run` supports optional isolation controls for more stable comparisons:
 
 - `--cpuset-cpus` pins container execution to specific CPUs.
 - `--memory` caps the container memory allocation.
@@ -199,7 +199,7 @@ Pinned CI regression evidence (scenario 03 base-image choice) lives in
 - `--max-workers` runs standard scenarios concurrently with bounded worker parallelism.
 - `--normalized-runtime` applies read-only/no-new-privileges/tmpfs runtime hardening.
 
-The same keys can be set under `[benchmark.run]` in `.springdocker.toml`.
+The same keys can be set under `[benchmark.run]` in `.dockly.toml`.
 
 When a metric is missing, the analyzer leaves the field empty instead of failing the summary.
 
@@ -211,7 +211,7 @@ When a metric is missing, the analyzer leaves the field empty instead of failing
 
 ### Configuring base-image variants (scenario 03)
 
-Set runtime bases under `[benchmark.generate.base_image_choice]` in `.springdocker.toml`:
+Set runtime bases under `[benchmark.generate.base_image_choice]` in `.dockly.toml`:
 
 ```toml
 [benchmark.generate.base_image_choice]
@@ -220,7 +220,7 @@ variants = ["alpine", "debian-slim", "ubuntu", "distroless"]
 
 Aliases such as `debian-bookworm-slim`, `ubuntu-noble`, and `eclipse-temurin-jre` are accepted.
 Slim OS images (`alpine`, `debian-slim`, `ubuntu`) default to a jlink-built JVM when `use_jlink=True`.
-When `use_jlink=False` on those bases, springdocker copies a pinned vendor Temurin JRE into the OS
+When `use_jlink=False` on those bases, dockly copies a pinned vendor Temurin JRE into the OS
 runtime stage (scenario 01 `without-jlink-runtime`). Scenario 01 `temurin-jre-image` uses the stock
 `eclipse-temurin` JRE container image as shipped. Scenario 03 enables jlink for every configured base
 (`distroless/base` + copied jlink runtime).

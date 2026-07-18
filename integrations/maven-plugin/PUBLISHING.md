@@ -1,6 +1,6 @@
 # Publishing springdocker-maven-plugin to Maven Central
 
-Tracked by [#145](https://github.com/mnafshin/springdocker/issues/145).
+Tracked by [#145](https://github.com/mnafshin/dockly/issues/145).
 
 ## Coordinates
 

@@ -12,11 +12,11 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import cmd_verify
-from springdocker.config import load_config
-from springdocker.config_audit import resolve_dockerfile_audit_config
-from springdocker.errors import EXIT_FAILURE, EXIT_OK, EXIT_USAGE
-from springdocker.services.dockerfile_service import render_dockerfile_text_from_config
+from dockly.commands import cmd_verify
+from dockly.config import load_config
+from dockly.config_audit import resolve_dockerfile_audit_config
+from dockly.errors import EXIT_FAILURE, EXIT_OK, EXIT_USAGE
+from dockly.services.dockerfile_service import render_dockerfile_text_from_config
 
 
 class VerifyCommandTests(unittest.TestCase):
@@ -36,7 +36,7 @@ class VerifyCommandTests(unittest.TestCase):
             dockerfile.write_text("FROM scratch\n", encoding="utf-8")
             stdout = StringIO()
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 redirect_stdout(stdout),
             ):
                 code = cmd_verify(root, "Dockerfile.generated", None, None, "json", None)
@@ -52,7 +52,7 @@ class VerifyCommandTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             stdout = StringIO()
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 redirect_stdout(stdout),
             ):
                 code = cmd_verify(root, "Dockerfile.generated", None, None, "table", None)
@@ -67,7 +67,7 @@ class VerifyCommandTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             stdout = StringIO()
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 redirect_stdout(stdout),
             ):
                 code = cmd_verify(root, "Dockerfile.generated", None, None, "sarif", "reports/verify.sarif")
@@ -79,7 +79,7 @@ class VerifyCommandTests(unittest.TestCase):
     def test_verify_check_config_drift_passes_for_config_generated_output(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            (root / ".springdocker.toml").write_text(
+            (root / ".dockly.toml").write_text(
                 "[project]\n"
                 'build_tool = "maven"\n\n'
                 "[dockerfile]\n"
@@ -88,7 +88,7 @@ class VerifyCommandTests(unittest.TestCase):
                 encoding="utf-8",
             )
             dockerfile = root / "Dockerfile.generated"
-            loaded = load_config(root / ".springdocker.toml")
+            loaded = load_config(root / ".dockly.toml")
             config = resolve_dockerfile_audit_config(root, "maven", dockerfile, loaded)
             dockerfile.write_text(
                 render_dockerfile_text_from_config(root, config, "maven"),
@@ -97,7 +97,7 @@ class VerifyCommandTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             stdout = StringIO()
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 redirect_stdout(stdout),
             ):
                 code = cmd_verify(
@@ -120,7 +120,7 @@ class VerifyCommandTests(unittest.TestCase):
     def test_verify_check_config_drift_fails_on_manual_edit(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            (root / ".springdocker.toml").write_text(
+            (root / ".dockly.toml").write_text(
                 "[project]\n"
                 'build_tool = "maven"\n\n'
                 "[dockerfile]\n"
@@ -131,7 +131,7 @@ class VerifyCommandTests(unittest.TestCase):
             (root / "sbom.spdx.json").write_text(json.dumps({"spdxVersion": "SPDX-2.3"}), encoding="utf-8")
             stdout = StringIO()
             with (
-                patch("springdocker.services.verify_service.shutil.which", return_value=None),
+                patch("dockly.services.verify_service.shutil.which", return_value=None),
                 redirect_stdout(stdout),
             ):
                 code = cmd_verify(

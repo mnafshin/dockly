@@ -13,7 +13,7 @@ def require_benchmark_dependencies() -> None:
         import requests  # noqa: F401
     except ModuleNotFoundError as exc:
         raise ValueError(
-            "benchmark subsystem is optional; install springdocker with benchmark extras: pip install 'springdocker[benchmark]'"
+            "benchmark subsystem is optional; install dockly with benchmark extras: pip install 'dockly[benchmark]'"
         ) from exc
 
 

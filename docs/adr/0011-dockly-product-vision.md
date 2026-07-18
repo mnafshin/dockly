@@ -6,11 +6,11 @@ Accepted (closes [#1](https://github.com/mnafshin/dockly/issues/1))
 
 ## Context
 
-This repository is a **clean import** from [`springdocker`](https://github.com/mnafshin/springdocker).
+This repository is a **clean import** from [`dockly`](https://github.com/mnafshin/dockly).
 The legacy project remains available for historical users; **dockly** is the forward product name and
 architecture.
 
-springdocker optimized for Spring Boot Dockerfiles with a Python CLI, config-first generation, and
+dockly optimized for Spring Boot Dockerfiles with a Python CLI, config-first generation, and
 explain/verify workflows. That scope is valuable, but the name and architecture implied a
 Spring-only product. Teams also need:
 
@@ -27,7 +27,7 @@ Related work tracked separately:
 | [#4](https://github.com/mnafshin/dockly/issues/4) | Rebrand Maven/Gradle builder plugins |
 | [#5](https://github.com/mnafshin/dockly/issues/5) | ProjectFacts detection model |
 | [#6](https://github.com/mnafshin/dockly/issues/6) | Strategy API |
-| [#9](https://github.com/mnafshin/dockly/issues/9) | Optional springdocker compatibility shims |
+| [#9](https://github.com/mnafshin/dockly/issues/9) | Optional dockly compatibility shims |
 | [#10](https://github.com/mnafshin/dockly/issues/10) | Contributor guide + language strategy stubs |
 
 ## Decision
@@ -68,10 +68,10 @@ flowchart LR
 - Becoming a black-box image builder (no committed Dockerfile)
 - Guaranteeing a universal polyglot “one CLI for every stack” experience in the first release
 
-### Relationship to springdocker
+### Relationship to dockly
 
 - This repo is the **dockly** codebase (clean import; no AI co-author history from the legacy tree).
-- `springdocker` remains the legacy product/repo for users who have not migrated.
+- `dockly` remains the legacy product/repo for users who have not migrated.
 - Surface rename (package, CLI, config, Action, env) is [#3](https://github.com/mnafshin/dockly/issues/3);
   optional compatibility shims are [#9](https://github.com/mnafshin/dockly/issues/9).
 
@@ -83,7 +83,7 @@ flowchart LR
 - Contributor docs ([#10](https://github.com/mnafshin/dockly/issues/10)) explain how to add a language
   strategy without forking the core.
 - Existing ADRs (0001–0010) remain valid for their original decisions; when a surface still says
-  `springdocker` in code or docs, treat it as pre-rebrand naming until [#3](https://github.com/mnafshin/dockly/issues/3)
+  `dockly` in code or docs, treat it as pre-rebrand naming until [#3](https://github.com/mnafshin/dockly/issues/3)
   lands — product identity is **dockly**.
 
 ## References

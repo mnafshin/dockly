@@ -208,7 +208,7 @@ def _layout_recommendations(layout: MultiModuleLayout, root: Path) -> list[str]:
             module = layout.spring_boot_modules[0]
             if not _direct_spring_markers(root):
                 notes.append(
-                    f"Spring Boot app appears to live in `{module}` — run springdocker with "
+                    f"Spring Boot app appears to live in `{module}` — run dockly with "
                     f"`--project-root {root / module}` for Dockerfile generation."
                 )
         else:
@@ -378,8 +378,10 @@ def inspect_project_details(root: Path, explicit_build_tool: str | None = None) 
         if java_version is None and metadata_root != root:
             java_version, spring_boot_version, direct_dependencies = _extract_gradle_info(root)
 
+    from .config import find_config_path
+
     compatibility, compatibility_notes = _runtime_compatibility(java_version, spring_boot_version)
-    config_exists = (root / ".springdocker.toml").exists()
+    config_exists = find_config_path(root).is_file()
     generated_dockerfiles = tuple(
         str(path.relative_to(root))
         for path in sorted(root.glob("Dockerfile*"))
@@ -390,7 +392,7 @@ def inspect_project_details(root: Path, explicit_build_tool: str | None = None) 
     recommendations = list(compatibility_notes)
     recommendations.extend(_layout_recommendations(layout, root))
     if not config_exists:
-        recommendations.append("Run `springdocker init` to create a starter .springdocker.toml file.")
+        recommendations.append("Run `dockly init` to create a starter .dockly.toml file.")
     if not generated_dockerfiles:
         recommendations.append("No Dockerfile artifacts found in the project root.")
     if not direct_dependencies:

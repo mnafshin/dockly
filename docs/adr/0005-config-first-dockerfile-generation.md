@@ -7,21 +7,21 @@ Accepted
 ## Context
 
 `DockerfileOptions` models most generation decisions internally. Interactive generation is
-provided by `springdocker configure`; deterministic CI generation uses `dockerfile generate`.
+provided by `dockly configure`; deterministic CI generation uses `dockerfile generate`.
 
 Teams need a reproducible, reviewable Dockerfile strategy in git. CI must generate Dockerfiles
 without interactive prompts.
 
 ## Decision
 
-1. **SSOT:** `.springdocker.toml` `[dockerfile]` is the single source of truth for generation
+1. **SSOT:** `.dockly.toml` `[dockerfile]` is the single source of truth for generation
    decisions.
-2. **Precedence:** CLI flags > project `.springdocker.toml` > built-in defaults. Org policy
+2. **Precedence:** CLI flags > project `.dockly.toml` > built-in defaults. Org policy
    (`SPRINGDOCKER_POLICY`) is a follow-up layer documented in issue #123.
 3. **Commands:**
-   - `springdocker configure` — interactive wizard that writes/updates `[dockerfile]` in config.
-   - `springdocker dockerfile generate` — non-interactive; reads resolved config only.
-   - `springdocker init --interactive` — delegates to the same configure flow after creating
+   - `dockly configure` — interactive wizard that writes/updates `[dockerfile]` in config.
+   - `dockly dockerfile generate` — non-interactive; reads resolved config only.
+   - `dockly init --interactive` — delegates to the same configure flow after creating
      the config skeleton.
 4. **Profiles:** Named bundles (`production-balanced`, `smallest-image`, `fast-cold-start`,
    `build-speed`, `simplest`, `compliance`, `custom`) map to `DockerfileOptions` overlays.
@@ -35,7 +35,7 @@ without interactive prompts.
 
 ## Consequences
 
-- Teams commit `.springdocker.toml` and review Dockerfile strategy in PRs.
+- Teams commit `.dockly.toml` and review Dockerfile strategy in PRs.
 - CI runs `dockerfile generate` deterministically.
 - The generator surface in config matches `DockerfileOptions` for explainability and testing.
 - Legacy `tools/dockerfile_wizard.py` delegation is removed; use `configure` + `dockerfile generate`.

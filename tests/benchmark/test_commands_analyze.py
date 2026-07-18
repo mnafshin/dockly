@@ -10,8 +10,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import cmd_benchmark_analyze
-from springdocker.errors import EXIT_FAILURE, EXIT_OK, EXIT_USAGE
+from dockly.commands import cmd_benchmark_analyze
+from dockly.errors import EXIT_FAILURE, EXIT_OK, EXIT_USAGE
 
 
 class AnalyzeCommandTests(unittest.TestCase):

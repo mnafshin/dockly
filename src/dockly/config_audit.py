@@ -1,4 +1,4 @@
-"""Connect explain/verify output to `.springdocker.toml` SSOT."""
+"""Connect explain/verify output to `.dockly.toml` SSOT."""
 
 from __future__ import annotations
 
@@ -7,13 +7,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from springdocker.config import (
+from dockly.config import (
     DockerfileGenerateConfig,
+    find_config_path,
     load_config,
     resolve_dockerfile_generate_config,
 )
-from springdocker.dockerfile import DockerfileOptions
-from springdocker.services import dockerfile_service
+from dockly.dockerfile import DockerfileOptions
+from dockly.services import dockerfile_service
 
 _OPTION_SOURCE_KEYS: tuple[str, ...] = (
     "java_version",
@@ -72,7 +73,7 @@ def resolve_dockerfile_audit_config(
     dockerfile_path: Path,
     loaded_config: dict[str, Any],
 ) -> DockerfileGenerateConfig:
-    from springdocker.project_detect import inspect_project_details
+    from dockly.project_detect import inspect_project_details
 
     output = _relative_output_path(project_root, dockerfile_path)
     detected_java: int | None = None
@@ -151,7 +152,7 @@ def detect_config_drift(actual_text: str, expected_text: str) -> DriftResult:
         return DriftResult(detected=False, detail="Dockerfile matches config-driven generator output")
     return DriftResult(
         detected=True,
-        detail="Dockerfile differs from `springdocker dockerfile generate` output for the current config",
+        detail="Dockerfile differs from `dockly dockerfile generate` output for the current config",
     )
 
 
@@ -162,7 +163,7 @@ def load_config_audit(
     *,
     config_path: Path | None = None,
 ) -> ConfigAudit | None:
-    path = config_path or (project_root / ".springdocker.toml")
+    path = config_path or find_config_path(project_root)
     if not path.exists():
         return None
     loaded_config = load_config(path)

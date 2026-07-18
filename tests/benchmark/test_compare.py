@@ -6,8 +6,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.analyze import VariantSummary
-from springdocker.compare import compare_summaries, format_delta_json, format_delta_table
+from dockly.analyze import VariantSummary
+from dockly.compare import compare_summaries, format_delta_json, format_delta_table
 
 
 class CompareTests(unittest.TestCase):

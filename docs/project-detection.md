@@ -1,6 +1,6 @@
 # Project detection
 
-`springdocker` detects Maven and Gradle projects with **marker checks** and lightweight descriptor parsing.
+`dockly` detects Maven and Gradle projects with **marker checks** and lightweight descriptor parsing.
 It is optimized for typical single-module Spring Boot apps and common multi-module layouts — not every exotic monorepo.
 
 See also: [`extensions.md`](extensions.md) (project detector plugins), [`troubleshooting.md`](troubleshooting.md).
@@ -15,7 +15,7 @@ See also: [`extensions.md`](extensions.md) (project detector plugins), [`trouble
 | Multi-module layout | `<packaging>pom</packaging>` + `<modules>` in root POM | `include(...)` in `settings.gradle(.kts)` |
 | Spring Boot module | Markers in a listed submodule | Markers in an included subproject |
 
-`springdocker inspect` reports `layout`, `modules`, and `spring_boot_modules` and adds recommendations when the Spring app is not at the repository root.
+`dockly inspect` reports `layout`, `modules`, and `spring_boot_modules` and adds recommendations when the Spring app is not at the repository root.
 
 ## Detection boundaries (not supported out of the box)
 
@@ -23,7 +23,7 @@ See also: [`extensions.md`](extensions.md) (project detector plugins), [`trouble
 |---|---|---|
 | Maven reactor, app in submodule | Root aggregator POM may lack Spring dependencies | Run CLI with `--project-root path/to/service` or use inspect recommendations |
 | Gradle composite / nested includes | Only direct `include("name")` entries in settings files are scanned | Point `--project-root` at the bootable subproject |
-| `includeBuild` / Gradle plugin builds | Not parsed | Custom `springdocker.project_detectors` plugin |
+| `includeBuild` / Gradle plugin builds | Not parsed | Custom `dockly.project_detectors` plugin |
 | Bazel, sbt, Ant | No markers | Custom detector plugin + explicit `--build-tool` where applicable |
 | Mixed Maven + Gradle markers at root | Ambiguous | Pass `--build-tool maven` or `gradle` |
 | Spring Boot only in BOM/imported parent | Root POM may not mention `spring-boot` string | Inspect submodule metadata or set project root to the service module |
@@ -34,8 +34,8 @@ See also: [`extensions.md`](extensions.md) (project detector plugins), [`trouble
 ### Single-module app (default)
 
 ```bash
-springdocker doctor --project-root .
-springdocker dockerfile generate --project-root .
+dockly doctor --project-root .
+dockly dockerfile generate --project-root .
 ```
 
 ### Maven reactor (monorepo)
@@ -53,15 +53,15 @@ services/
 From repository root:
 
 ```bash
-springdocker inspect --project-root . --format json
+dockly inspect --project-root . --format json
 # → layout: maven-reactor, spring_boot_modules: ["services/api"]
 ```
 
 Generate from the **service module**:
 
 ```bash
-springdocker init --project-root services/api --build-tool maven
-springdocker dockerfile generate --project-root services/api
+dockly init --project-root services/api --build-tool maven
+dockly dockerfile generate --project-root services/api
 ```
 
 ### Gradle multi-project
@@ -79,7 +79,7 @@ Same pattern: inspect at root, generate from `app/` (or whichever module is boot
 Register a detector when markers are non-standard (custom wrapper scripts, generated settings, polyglot repos):
 
 ```toml
-[project.entry-points."springdocker.project_detectors"]
+[project.entry-points."dockly.project_detectors"]
 acme-monorepo = "acme_plugins.detectors:detect_build_tool"
 ```
 

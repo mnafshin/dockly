@@ -7,10 +7,10 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from springdocker import __version__
+from dockly import __version__
 
 DEFAULT_WORKFLOW_RELATIVE = Path(".github") / "workflows" / "dockerfile.yml"
-ACTION_USES_TEMPLATE = "mnafshin/springdocker/action@v{major}"
+ACTION_USES_TEMPLATE = "mnafshin/dockly/action@v{major}"
 
 
 def action_uses_ref(*, package_version: str | None = None) -> str:
@@ -27,18 +27,18 @@ def render_dockerfile_ssot_workflow(
     dockerfile: str = "Dockerfile.generated",
     project_root: str = ".",
     build_tool: str | None = None,
-    springdocker_version: str | None = None,
+    dockly_version: str | None = None,
     action_ref: str | None = None,
     pin_version: bool = False,
 ) -> str:
-    """Render the Dockerfile SSOT workflow that uses the springdocker Action."""
+    """Render the Dockerfile SSOT workflow that uses the dockly Action."""
     template_text = (
-        resources.files("springdocker")
+        resources.files("dockly")
         .joinpath("templates/github_dockerfile_workflow.yml.j2")
         .read_text(encoding="utf-8")
     )
-    if springdocker_version is not None:
-        pinned_version = springdocker_version
+    if dockly_version is not None:
+        pinned_version = dockly_version
     elif pin_version:
         pinned_version = __version__
     else:
@@ -48,7 +48,7 @@ def render_dockerfile_ssot_workflow(
         dockerfile=dockerfile,
         project_root=project_root,
         build_tool=build_tool or "",
-        springdocker_version=pinned_version,
+        dockly_version=pinned_version,
     )
 
 

@@ -111,7 +111,7 @@ _MANIFEST_ACCEPT = (
 def _request_headers(pin: ImagePin) -> dict[str, str]:
     headers = {
         "Accept": _MANIFEST_ACCEPT,
-        "User-Agent": "springdocker-digest-verify",
+        "User-Agent": "dockly-digest-verify",
     }
     if pin.registry_host == "registry-1.docker.io":
         headers["Authorization"] = f"Bearer {_docker_hub_token(pin.repository_path)}"

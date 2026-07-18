@@ -11,8 +11,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import cmd_inspect
-from springdocker.errors import EXIT_OK
+from dockly.commands import cmd_inspect
+from dockly.errors import EXIT_OK
 
 
 class InspectCommandTests(unittest.TestCase):
@@ -27,7 +27,7 @@ class InspectCommandTests(unittest.TestCase):
                 "</project>",
                 encoding="utf-8",
             )
-            (root / ".springdocker.toml").write_text("[project]\n", encoding="utf-8")
+            (root / ".dockly.toml").write_text("[project]\n", encoding="utf-8")
             stdout = StringIO()
             with redirect_stdout(stdout):
                 code = cmd_inspect(root, None, "json")

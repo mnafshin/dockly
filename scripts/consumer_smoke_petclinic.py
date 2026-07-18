@@ -21,13 +21,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from springdocker.benchmarks.runner import _run_command, _stop_container, _wait_readiness
+from dockly.benchmarks.runner import _run_command, _stop_container, _wait_readiness
 
 MANIFEST_PATH = Path(__file__).with_name("consumer_smoke_petclinic.manifest.json")
 MINIMAL_SBOM = {
     "spdxVersion": "SPDX-2.3",
     "name": "spring-petclinic-consumer-smoke",
-    "comment": "Placeholder SPDX document for springdocker verify in consumer-smoke only.",
+    "comment": "Placeholder SPDX document for dockly verify in consumer-smoke only.",
 }
 
 
@@ -114,15 +114,15 @@ def clone_petclinic(repository: str, ref: str, destination: Path) -> None:
         raise RuntimeError(detail)
 
 
-def _run_springdocker(
-    springdocker_cmd: list[str],
+def _run_dockly(
+    dockly_cmd: list[str],
     cli_args: list[str],
     *,
     project_root: Path,
     input_text: str | None = None,
     capture_output: bool = False,
 ) -> int | tuple[int, str]:
-    command = [*springdocker_cmd, *cli_args, "--project-root", str(project_root)]
+    command = [*dockly_cmd, *cli_args, "--project-root", str(project_root)]
     print(f"-- {' '.join(command)}")
     completed = subprocess.run(
         command,
@@ -140,11 +140,11 @@ def run_onboarding_workflow(
     project_root: Path,
     manifest: ConsumerSmokeManifest,
     *,
-    springdocker_cmd: list[str],
+    dockly_cmd: list[str],
 ) -> int:
     print("\n== onboarding: setup")
-    code = _run_springdocker(
-        springdocker_cmd,
+    code = _run_dockly(
+        dockly_cmd,
         [
             "setup",
             "--force",
@@ -169,8 +169,8 @@ def run_onboarding_workflow(
         return 1
 
     print("\n== onboarding: verify --check-config-drift")
-    verify_result = _run_springdocker(
-        springdocker_cmd,
+    verify_result = _run_dockly(
+        dockly_cmd,
         [
             "verify",
             "--dockerfile",
@@ -234,7 +234,7 @@ def probe_readiness(
     readiness_path: str,
     timeout_seconds: float,
 ) -> int:
-    container_name = f"springdocker-consumer-petclinic-{uuid.uuid4().hex[:12]}"
+    container_name = f"dockly-consumer-petclinic-{uuid.uuid4().hex[:12]}"
     readiness_url = f"http://localhost:{host_port}{readiness_path}"
     print(f"\n== docker run readiness probe: {readiness_url}")
 
@@ -272,13 +272,13 @@ def probe_readiness(
         _stop_container(container_name)
 
 
-def resolve_springdocker_cmd(explicit: str | None) -> list[str]:
+def resolve_dockly_cmd(explicit: str | None) -> list[str]:
     if explicit:
         return explicit.split()
-    if shutil.which("springdocker"):
-        return ["springdocker"]
+    if shutil.which("dockly"):
+        return ["dockly"]
     raise RuntimeError(
-        "springdocker not found on PATH; install with `pip install -e .` or pass --springdocker-cmd"
+        "dockly not found on PATH; install with `pip install -e .` or pass --dockly-cmd"
     )
 
 
@@ -290,8 +290,8 @@ def main(argv: list[str] | None = None) -> int:
             "Examples:\n"
             "  pip install -e .\n"
             "  DOCKER_BUILDKIT=1 python scripts/consumer_smoke_petclinic.py\n\n"
-            "  pipx install springdocker\n"
-            "  DOCKER_BUILDKIT=1 python scripts/consumer_smoke_petclinic.py --springdocker-cmd springdocker\n"
+            "  pipx install dockly\n"
+            "  DOCKER_BUILDKIT=1 python scripts/consumer_smoke_petclinic.py --dockly-cmd dockly\n"
         ),
     )
     parser.add_argument(
@@ -327,9 +327,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Build image but skip container run/readiness probe",
     )
     parser.add_argument(
-        "--springdocker-cmd",
+        "--dockly-cmd",
         default=None,
-        help="springdocker executable or command prefix (default: springdocker on PATH)",
+        help="dockly executable or command prefix (default: dockly on PATH)",
     )
     args = parser.parse_args(argv)
 
@@ -342,7 +342,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         manifest = load_manifest(args.manifest.resolve())
-        springdocker_cmd = resolve_springdocker_cmd(args.springdocker_cmd)
+        dockly_cmd = resolve_dockly_cmd(args.dockly_cmd)
     except (OSError, ValueError, RuntimeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -353,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.keep_work_dir:
             project_root = Path.cwd() / ".consumer-smoke-petclinic"
         else:
-            temp_dir = tempfile.TemporaryDirectory(prefix="springdocker-consumer-smoke-")
+            temp_dir = tempfile.TemporaryDirectory(prefix="dockly-consumer-smoke-")
             project_root = Path(temp_dir.name) / "spring-petclinic"
     project_root = project_root.resolve()
 
@@ -365,7 +365,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
         print(f"\n== project root: {project_root}")
-        onboarding_code = run_onboarding_workflow(project_root, manifest, springdocker_cmd=springdocker_cmd)
+        onboarding_code = run_onboarding_workflow(project_root, manifest, dockly_cmd=dockly_cmd)
         if onboarding_code != 0:
             return onboarding_code
 

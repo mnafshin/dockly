@@ -8,7 +8,7 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.config import (
+from dockly.config import (
     load_config,
     render_default_config,
     resolve_benchmark_generate_config,
@@ -27,8 +27,20 @@ def _resolve_dockerfile(loaded: dict) -> object:
 class ConfigTests(unittest.TestCase):
     def test_load_missing_config_returns_empty(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            cfg = load_config(Path(td) / ".springdocker.toml")
+            cfg = load_config(Path(td) / ".dockly.toml")
             self.assertEqual(cfg, {})
+
+    def test_find_config_path_prefers_dockly_over_legacy(self) -> None:
+        from dockly.config import find_config_path
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            legacy = root / ".springdocker.toml"
+            primary = root / ".dockly.toml"
+            legacy.write_text("[project]\nbuild_tool = \"maven\"\n", encoding="utf-8")
+            self.assertEqual(find_config_path(root), legacy)
+            primary.write_text("[project]\nbuild_tool = \"gradle\"\n", encoding="utf-8")
+            self.assertEqual(find_config_path(root), primary)
 
     def test_resolve_benchmark_config_from_file(self) -> None:
         loaded = {
@@ -231,7 +243,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_strict_unknown_key_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            cfg = Path(td) / ".springdocker.toml"
+            cfg = Path(td) / ".dockly.toml"
             cfg.write_text("[project]\nbuild_tool='maven'\n[unknown]\na=1\n", encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_config(cfg, strict=True)

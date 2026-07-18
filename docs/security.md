@@ -19,18 +19,18 @@ docker run --read-only --cap-drop=ALL --security-opt=no-new-privileges --tmpfs /
 - Ship an SBOM (`include_embedded_sbom`)
 - Sign images before release; scan regularly
 
-### Repository CI vs `springdocker verify`
+### Repository CI vs `dockly verify`
 
 | Surface | Scope | Severities | Blocks |
 |---|---|---|---|
 | GitHub Actions `supply-chain` | Full checkout | CRITICAL only | Yes |
-| `springdocker verify` | Dockerfile context (or `--trivy-scan-project-root`) | HIGH+CRITICAL | When you run verify with `trivy` installed |
+| `dockly verify` | Dockerfile context (or `--trivy-scan-project-root`) | HIGH+CRITICAL | When you run verify with `trivy` installed |
 
 CI also publishes an SPDX SBOM artifact; releases sign with Cosign.
 
 ## Digest pins
 
-Pins live in [`src/springdocker/digest_pins.py`](../src/springdocker/digest_pins.py).
+Pins live in [`src/dockly/digest_pins.py`](../src/dockly/digest_pins.py).
 
 | Pin label | Image |
 |---|---|

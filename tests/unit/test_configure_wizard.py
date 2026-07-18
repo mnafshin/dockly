@@ -10,10 +10,10 @@ from tests.test_support import ROOT, add_src_to_path
 
 add_src_to_path()
 
-from springdocker.cli import build_parser, main
-from springdocker.commands import cmd_configure
-from springdocker.config import load_config, resolve_dockerfile_generate_config
-from springdocker.configure_wizard import (
+from dockly.cli import build_parser, main
+from dockly.commands import cmd_configure
+from dockly.config import load_config, resolve_dockerfile_generate_config
+from dockly.configure_wizard import (
     _edit_jvm_flags,
     _startup_optimization_choice,
     ask_bool,
@@ -27,10 +27,10 @@ class ConfigureWizardTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="production-balanced"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard.ask_choice", return_value="production-balanced"),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
             ):
                 run_configure_wizard(root, config_path)
             self.assertTrue(config_path.exists())
@@ -43,7 +43,7 @@ class ConfigureWizardTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             config_path.write_text("[project]\nbuild_tool = \"maven\"\n", encoding="utf-8")
             stderr = StringIO()
             with patch("sys.stderr", stderr):
@@ -65,12 +65,12 @@ class ConfigureCliTests(unittest.TestCase):
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="production-balanced"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard.ask_choice", return_value="production-balanced"),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
             ):
                 code = main(["configure", "--project-root", str(root), "--force"])
             self.assertEqual(code, 0)
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             loaded = load_config(config_path)
             resolved = resolve_dockerfile_generate_config(*([None] * 21), loaded)
             self.assertEqual(resolved.runtime_image, "distroless")
@@ -84,12 +84,12 @@ class ConfigureCliTests(unittest.TestCase):
             for name in ("pom.xml", "build.gradle", "gradlew"):
                 (root / name).write_text((fixture / name).read_text(encoding="utf-8"), encoding="utf-8")
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="production-balanced"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard.ask_choice", return_value="production-balanced"),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
             ):
-                code = cmd_configure(root, "maven", root / ".springdocker.toml", force=True, generate_after=False)
+                code = cmd_configure(root, "maven", root / ".dockly.toml", force=True, generate_after=False)
             self.assertEqual(code, 0)
-            loaded = load_config(root / ".springdocker.toml")
+            loaded = load_config(root / ".dockly.toml")
             self.assertEqual(loaded["project"]["build_tool"], "maven")
 
 
@@ -121,7 +121,7 @@ class ConfigureWizardHelperTests(unittest.TestCase):
             self.assertFalse(ask_bool("Enable feature?", True))
 
     def test_startup_optimization_offers_appcds_on_java_21(self) -> None:
-        with patch("springdocker.configure_wizard.ask_choice", return_value="AppCDS") as ask:
+        with patch("dockly.configure_wizard.ask_choice", return_value="AppCDS") as ask:
             enable_appcds, enable_jep483 = _startup_optimization_choice(21)
         self.assertTrue(enable_appcds)
         self.assertFalse(enable_jep483)
@@ -131,41 +131,41 @@ class ConfigureWizardHelperTests(unittest.TestCase):
         self.assertIn("24", prompt)
 
     def test_startup_optimization_offers_aot_on_java_25(self) -> None:
-        with patch("springdocker.configure_wizard.ask_choice", return_value="JEP 483 AOT cache") as ask:
+        with patch("dockly.configure_wizard.ask_choice", return_value="JEP 483 AOT cache") as ask:
             enable_appcds, enable_jep483 = _startup_optimization_choice(25)
         self.assertFalse(enable_appcds)
         self.assertTrue(enable_jep483)
         self.assertIn("JEP 483 AOT cache", ask.call_args.args[1])
 
     def test_startup_optimization_appcds_choice(self) -> None:
-        with patch("springdocker.configure_wizard.ask_choice", return_value="AppCDS"):
+        with patch("dockly.configure_wizard.ask_choice", return_value="AppCDS"):
             enable_appcds, enable_jep483 = _startup_optimization_choice(25)
         self.assertTrue(enable_appcds)
         self.assertFalse(enable_jep483)
 
     def test_startup_optimization_jep483_choice(self) -> None:
-        with patch("springdocker.configure_wizard.ask_choice", return_value="JEP 483 AOT cache"):
+        with patch("dockly.configure_wizard.ask_choice", return_value="JEP 483 AOT cache"):
             enable_appcds, enable_jep483 = _startup_optimization_choice(25)
         self.assertFalse(enable_appcds)
         self.assertTrue(enable_jep483)
 
     def test_startup_optimization_none_choice(self) -> None:
-        with patch("springdocker.configure_wizard.ask_choice", return_value="none"):
+        with patch("dockly.configure_wizard.ask_choice", return_value="none"):
             enable_appcds, enable_jep483 = _startup_optimization_choice(25)
         self.assertFalse(enable_appcds)
         self.assertFalse(enable_jep483)
 
     def test_edit_jvm_flags_keeps_defaults(self) -> None:
         defaults = ("-XX:MaxRAMPercentage=75",)
-        with patch("springdocker.configure_wizard.ask_bool", return_value=True):
+        with patch("dockly.configure_wizard.ask_bool", return_value=True):
             self.assertEqual(_edit_jvm_flags(defaults), defaults)
 
     def test_edit_jvm_flags_disable_tuned_flags(self) -> None:
-        with patch("springdocker.configure_wizard.ask_bool", side_effect=[False, True]):
+        with patch("dockly.configure_wizard.ask_bool", side_effect=[False, True]):
             self.assertEqual(_edit_jvm_flags(("-XX:MaxRAMPercentage=75",)), ())
 
     def test_edit_jvm_flags_custom_entry(self) -> None:
-        with patch("springdocker.configure_wizard.ask_bool", return_value=False), patch(
+        with patch("dockly.configure_wizard.ask_bool", return_value=False), patch(
             "builtins.input",
             side_effect=["-XX:+UseZGC", ""],
         ):
@@ -180,14 +180,14 @@ class ConfigureWizardFlowTests(unittest.TestCase):
                 "<project><properties><java.version>21</java.version></properties></project>",
                 encoding="utf-8",
             )
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             with (
                 patch(
-                    "springdocker.configure_wizard.ask_choice",
+                    "dockly.configure_wizard.ask_choice",
                     side_effect=["custom — Custom", "debian-slim", "spring-aot"],
                 ),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
-                patch("springdocker.configure_wizard._startup_optimization_choice", return_value=(True, False)),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard._startup_optimization_choice", return_value=(True, False)),
                 patch("builtins.input", return_value=""),
             ):
                 resolved = run_configure_wizard(root, config_path)
@@ -203,14 +203,14 @@ class ConfigureWizardFlowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             with (
                 patch(
-                    "springdocker.configure_wizard.ask_choice",
+                    "dockly.configure_wizard.ask_choice",
                     side_effect=["custom — Custom", "temurin", "jvm-balanced"],
                 ),
                 patch(
-                    "springdocker.configure_wizard.ask_bool",
+                    "dockly.configure_wizard.ask_bool",
                     side_effect=[
                         False,  # use jlink? (temurin default)
                         True,  # buildkit cache
@@ -222,7 +222,7 @@ class ConfigureWizardFlowTests(unittest.TestCase):
                         True,  # write config
                     ],
                 ),
-                patch("springdocker.configure_wizard._startup_optimization_choice", return_value=(False, True)),
+                patch("dockly.configure_wizard._startup_optimization_choice", return_value=(False, True)),
                 patch("builtins.input", return_value="25"),
             ):
                 resolved = run_configure_wizard(root, config_path)
@@ -236,10 +236,10 @@ class ConfigureWizardFlowTests(unittest.TestCase):
                 "<project><properties><java.version>21</java.version></properties></project>",
                 encoding="utf-8",
             )
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="fast-cold-start"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard.ask_choice", return_value="fast-cold-start"),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
             ):
                 resolved = run_configure_wizard(root, config_path)
             self.assertEqual(resolved.profile, "fast-cold-start")
@@ -250,10 +250,10 @@ class ConfigureWizardFlowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="production-balanced"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=False),self.assertRaises(SystemExit)
+                patch("dockly.configure_wizard.ask_choice", return_value="production-balanced"),
+                patch("dockly.configure_wizard.ask_bool", return_value=False),self.assertRaises(SystemExit)
             ):
                 run_configure_wizard(root, config_path)
             self.assertFalse(config_path.exists())
@@ -262,15 +262,15 @@ class ConfigureWizardFlowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project></project>", encoding="utf-8")
-            config_path = root / ".springdocker.toml"
+            config_path = root / ".dockly.toml"
             stdout = StringIO()
             with (
-                patch("springdocker.configure_wizard.ask_choice", return_value="production-balanced"),
-                patch("springdocker.configure_wizard.ask_bool", return_value=True),
+                patch("dockly.configure_wizard.ask_choice", return_value="production-balanced"),
+                patch("dockly.configure_wizard.ask_bool", return_value=True),
                 patch("sys.stdout", stdout),
             ):
                 run_configure_wizard(root, config_path, generate_after=True)
-            self.assertIn("next: springdocker dockerfile generate", stdout.getvalue())
+            self.assertIn("next: dockly dockerfile generate", stdout.getvalue())
 
 
 if __name__ == "__main__":

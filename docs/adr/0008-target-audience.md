@@ -2,11 +2,11 @@
 
 ## Status
 
-Accepted (closes [#87](https://github.com/mnafshin/springdocker/issues/87))
+Accepted (closes [#87](https://github.com/mnafshin/dockly/issues/87))
 
 ## Context
 
-Review question [#87](https://github.com/mnafshin/springdocker/issues/87) asked whether springdocker is aimed at:
+Review question [#87](https://github.com/mnafshin/dockly/issues/87) asked whether dockly is aimed at:
 
 1. Personal research / lab tooling with bleeding-edge defaults
 2. Conference / demo toolkit with rich sample assets
@@ -19,10 +19,10 @@ benchmark evidence belongs in the main repository.
 
 **Primary audience: teams adopting Spring Boot containerization in production.**
 
-springdocker is a **production-oriented CLI** for Maven/Gradle services that need:
+dockly is a **production-oriented CLI** for Maven/Gradle services that need:
 
 - a real, reviewable Dockerfile in git
-- config-first strategy (`.springdocker.toml` SSOT)
+- config-first strategy (`.dockly.toml` SSOT)
 - explain / verify workflows in local dev and CI
 - generator support from **Java 17+** on the user's project (not tied to the reference sample versions)
 
@@ -43,7 +43,7 @@ do not need to match Java 25 or Spring Boot 4.
 
 | Surface | Role |
 |---|---|
-| User's service + `springdocker init` / `configure` | Production path — **Java 17** floor; undetected fallback **17**; pick profile for **your** stack |
+| User's service + `dockly init` / `configure` | Production path — **Java 17** floor; undetected fallback **17**; pick profile for **your** stack |
 | Feature gates | AppCDS / jlink / layered JAR on **17+**; JEP 483 AOT hard-requires **24+**; `fast-cold-start` remaps to AppCDS on 17–23 |
 | [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) | Reference / evidence anchor — Java **25** for stress-test + AOT scenario numbers |
 | Presentations under `docs/presentation/` | Storytelling — sample evidence (often Java 25), not fleet guarantees |
@@ -57,12 +57,12 @@ benchmark and talk refresh.
 - README and POSITIONING lead with production team adoption; benchmarks and decks are optional.
 - PyPI-first distribution ([ADR 0006](0006-pypi-first-distribution.md)) aligns with the primary audience.
 - Benchmark/presentation assets remain in the main repo ([ADR 0004](0004-sample-project-strategy.md),
-  [#91](https://github.com/mnafshin/springdocker/issues/91)) as secondary-audience support.
-- [#69](https://github.com/mnafshin/springdocker/issues/69) (Java 25 / Boot 4 as *user* defaults) is
+  [#91](https://github.com/mnafshin/dockly/issues/91)) as secondary-audience support.
+- [#69](https://github.com/mnafshin/dockly/issues/69) (Java 25 / Boot 4 as *user* defaults) is
   addressed by CLI fallback **17** and keeping Java 25 only on the evidence harness.
 
 ## References
 
 - [docs/POSITIONING.md](../POSITIONING.md)
 - [docs/adopt.md](../adopt.md)
-- [#87 Define springdocker target audience](https://github.com/mnafshin/springdocker/issues/87)
+- [#87 Define dockly target audience](https://github.com/mnafshin/dockly/issues/87)

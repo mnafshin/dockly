@@ -6,8 +6,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.dockerfile import DockerfileOptions, build_dockerfile
-from springdocker.dockerfile_explain import explain_dockerfile_text
+from dockly.dockerfile import DockerfileOptions, build_dockerfile
+from dockly.dockerfile_explain import explain_dockerfile_text
 
 
 class DockerfileExplainTests(unittest.TestCase):
@@ -63,7 +63,7 @@ class DockerfileExplainTests(unittest.TestCase):
         payload = explain_dockerfile_text("FROM scratch\n")
         notes = payload["notes"]
         self.assertIn("Advisory static analysis only", notes[0])
-        self.assertIn("springdocker verify", notes[-1])
+        self.assertIn("dockly verify", notes[-1])
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a springdocker-generated Dockerfile on a real Docker daemon and probe readiness."""
+"""Build a dockly-generated Dockerfile on a real Docker daemon and probe readiness."""
 
 from __future__ import annotations
 
@@ -9,20 +9,20 @@ import sys
 import uuid
 from pathlib import Path
 
-from springdocker.benchmarks.runner import _run_command, _stop_container, _wait_readiness
+from dockly.benchmarks.runner import _run_command, _stop_container, _wait_readiness
 
 DEFAULT_PROJECT_ROOT = Path("samples/java-spring-docker")
 DEFAULT_DOCKERFILE = "Dockerfile.ci-smoke"
-DEFAULT_IMAGE = "springdocker-ci-smoke:latest"
+DEFAULT_IMAGE = "dockly-ci-smoke:latest"
 DEFAULT_HOST_PORT = 18081
 READINESS_PATH = "/actuator/health/readiness"
 BUILD_TIMEOUT_SECONDS = 1200
 READINESS_TIMEOUT_SECONDS = 120.0
 
 
-def _run_springdocker(args: list[str], project_root: Path) -> int:
+def _run_dockly(args: list[str], project_root: Path) -> int:
     completed = subprocess.run(
-        ["springdocker", *args, "--project-root", str(project_root)],
+        ["dockly", *args, "--project-root", str(project_root)],
         check=False,
     )
     return completed.returncode
@@ -30,7 +30,7 @@ def _run_springdocker(args: list[str], project_root: Path) -> int:
 
 def _generate_dockerfile(project_root: Path, dockerfile: str) -> int:
     print(f"-- generate Dockerfile: {dockerfile}")
-    return _run_springdocker(
+    return _run_dockly(
         ["dockerfile", "generate", "--output", dockerfile],
         project_root,
     )
@@ -56,7 +56,7 @@ def _docker_build(
 
 
 def _probe_readiness(image: str, host_port: int, timeout_seconds: float) -> int:
-    container_name = f"springdocker-ci-smoke-{uuid.uuid4().hex[:12]}"
+    container_name = f"dockly-ci-smoke-{uuid.uuid4().hex[:12]}"
     readiness_url = f"http://localhost:{host_port}{READINESS_PATH}"
     print(f"-- docker run readiness probe: {readiness_url}")
 

@@ -1,11 +1,11 @@
-"""Serialize DockerfileOptions into .springdocker.toml."""
+"""Serialize DockerfileOptions into .dockly.toml."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-from springdocker.dockerfile import DockerfileOptions
+from dockly.dockerfile import DockerfileOptions
 
 try:
     import tomllib  # Python 3.11+

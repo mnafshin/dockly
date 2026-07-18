@@ -12,15 +12,15 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.commands import (
+from dockly.commands import (
     cmd_benchmark_generate,
     cmd_benchmark_run,
     cmd_dockerfile_generate,
     cmd_explain,
     cmd_verify,
 )
-from springdocker.config import sample_dockerfile_config
-from springdocker.dockerfile import DockerfileOptions, build_dockerfile
+from dockly.config import sample_dockerfile_config
+from dockly.dockerfile import DockerfileOptions, build_dockerfile
 
 
 class _FakeCompleted:
@@ -74,8 +74,8 @@ class InternalFlowTests(unittest.TestCase):
                     return _FakeCompleted(stdout="1048576")
                 return _FakeCompleted(returncode=0, stdout="")
 
-            with patch("springdocker.benchmarks.runner._wait_readiness", return_value=100), patch(
-                "springdocker.benchmarks.runner.subprocess.run", side_effect=fake_run
+            with patch("dockly.benchmarks.runner._wait_readiness", return_value=100), patch(
+                "dockly.benchmarks.runner.subprocess.run", side_effect=fake_run
             ):
                 stdout = StringIO()
                 with redirect_stdout(stdout):
@@ -106,7 +106,7 @@ class InternalFlowTests(unittest.TestCase):
             script_dir.mkdir()
             (script_dir / "setup_benchmark_folders.py").write_text("# legacy\n", encoding="utf-8")
             stderr = StringIO()
-            with patch("springdocker.commands.run_checked", return_value=0), redirect_stderr(stderr):
+            with patch("dockly.commands.run_checked", return_value=0), redirect_stderr(stderr):
                 code = cmd_benchmark_generate(
                     project_root=root,
                     build_tool=None,
@@ -125,8 +125,8 @@ class InternalFlowTests(unittest.TestCase):
             script_dir.mkdir()
             (script_dir / "setup_benchmark_folders.py").write_text("# legacy\n", encoding="utf-8")
             stderr = StringIO()
-            with patch.dict(os.environ, {"SPRINGDOCKER_LEGACY_SCRIPTS": "1"}, clear=False), patch(
-                "springdocker.commands.run_checked", return_value=0
+            with patch.dict(os.environ, {"DOCKLY_LEGACY_SCRIPTS": "1"}, clear=False), patch(
+                "dockly.commands.run_checked", return_value=0
             ), redirect_stderr(stderr):
                 code = cmd_benchmark_generate(
                     project_root=root,
@@ -135,7 +135,7 @@ class InternalFlowTests(unittest.TestCase):
                     use_legacy_scripts=False,
                 )
             self.assertEqual(code, 0)
-            self.assertIn("SPRINGDOCKER_LEGACY_SCRIPTS", stderr.getvalue())
+            self.assertIn("DOCKLY_LEGACY_SCRIPTS", stderr.getvalue())
 
     def test_dockerfile_generate_round_trips_to_explain(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -172,7 +172,7 @@ class InternalFlowTests(unittest.TestCase):
             dockerfile.write_text("FROM scratch\n", encoding="utf-8")
             (root / "sbom.spdx.json").write_text('{"spdxVersion":"SPDX-2.3"}', encoding="utf-8")
             report = root / "verify.json"
-            with patch("springdocker.services.verify_service.shutil.which", return_value=None):
+            with patch("dockly.services.verify_service.shutil.which", return_value=None):
                 code = cmd_verify(
                     project_root=root,
                     dockerfile_path="Dockerfile.generated",
@@ -227,7 +227,7 @@ class InternalFlowTests(unittest.TestCase):
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
             stderr = StringIO()
             with patch(
-                "springdocker.commands.benchmark_service.require_benchmark_dependencies",
+                "dockly.commands.benchmark_service.require_benchmark_dependencies",
                 side_effect=ValueError("benchmark subsystem is optional"),
             ), redirect_stderr(stderr):
                 code = cmd_benchmark_generate(

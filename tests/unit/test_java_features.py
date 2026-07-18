@@ -6,8 +6,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.dockerfile import DockerfileOptions
-from springdocker.java_features import (
+from dockly.dockerfile import DockerfileOptions
+from dockly.java_features import (
     JEP483_MIN_JAVA,
     MIN_JAVA_VERSION,
     FeatureAvailability,

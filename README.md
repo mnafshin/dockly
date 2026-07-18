@@ -15,17 +15,17 @@ Developer toolkit for **production teams** containerizing Java / Spring Boot —
 
 ## Quick start
 
-### Python CLI (full toolkit — `.springdocker.toml` SSOT)
+### Python CLI (full toolkit — `.dockly.toml` SSOT)
 
 ```bash
-pipx install springdocker
+pipx install dockly
 cd /path/to/your-spring-boot-app
-springdocker setup --ci
+dockly setup --ci
 ```
 
-That detects your Maven/Gradle project, writes `.springdocker.toml` (`production-balanced`), generates `Dockerfile.generated`, and adds `.github/workflows/dockerfile.yml` using the [springdocker GitHub Action](action/README.md).
+That detects your Maven/Gradle project, writes `.dockly.toml` (`production-balanced`), generates `Dockerfile.generated`, and adds `.github/workflows/dockerfile.yml` using the [dockly GitHub Action](action/README.md).
 
-Already onboarded? `springdocker setup --ci-only`. Interactive profiles: `springdocker setup --interactive`.
+Already onboarded? `dockly setup --ci-only`. Interactive profiles: `dockly setup --interactive`.
 
 ### Java builder plugin (Dockerfile only — POM SSOT, no Python)
 
@@ -40,15 +40,15 @@ Already onboarded? `springdocker setup --ci-only`. Interactive profiles: `spring
 ```bash
 cd integrations/maven-plugin && mvn clean install   # until Maven Central (#145)
 cd your-spring-boot-app
-mvn springdocker:generate
-mvn springdocker:verify
+mvn dockly:generate
+mvn dockly:verify
 ```
 
-No `.springdocker.toml` required. Optional later: `mvn springdocker:export-config` to bridge to the CLI. Details: [`integrations/maven-plugin/README.md`](integrations/maven-plugin/README.md) · [ADR 0010](docs/adr/0010-pom-gradle-ssot-java-builder.md).
+No `.dockly.toml` required. Optional later: `mvn dockly:export-config` to bridge to the CLI. Details: [`integrations/maven-plugin/README.md`](integrations/maven-plugin/README.md) · [ADR 0010](docs/adr/0010-pom-gradle-ssot-java-builder.md).
 
 Team rollout for both surfaces: [`docs/adopt.md`](docs/adopt.md).
 
-**dockly** (installable today as the `springdocker` package until [#3](https://github.com/mnafshin/dockly/issues/3)) helps teams inspect a Java / Spring Boot project, commit Dockerfile strategy in config, generate and verify Dockerfiles in CI, and (optionally) run benchmark suites for evidence-backed tuning. The **Maven plugin** is a separate Java-only builder surface for teams that only need generate/verify from `pom.xml`.
+**dockly** (installable today as the `dockly` package until [#3](https://github.com/mnafshin/dockly/issues/3)) helps teams inspect a Java / Spring Boot project, commit Dockerfile strategy in config, generate and verify Dockerfiles in CI, and (optionally) run benchmark suites for evidence-backed tuning. The **Maven plugin** is a separate Java-only builder surface for teams that only need generate/verify from `pom.xml`.
 
 See [`docs/POSITIONING.md`](docs/POSITIONING.md) for **who it is for**, core vs strategies, CI-evidenced guarantees, and how the sample projects relate to shipped behavior.
 
@@ -71,13 +71,13 @@ Resolved in [`docs/adr/0008-target-audience.md`](docs/adr/0008-target-audience.m
 
 ```bash
 # Recommended: isolated user install (Dockerfile workflow)
-pipx install springdocker
+pipx install dockly
 # or
-uv tool install springdocker
+uv tool install dockly
 
 # Include benchmark run/analyze (optional; requires Docker on the host)
-pipx install 'springdocker[benchmark]'
-# or: python3 -m pip install 'springdocker[benchmark]' inside your project venv
+pipx install 'dockly[benchmark]'
+# or: python3 -m pip install 'dockly[benchmark]' inside your project venv
 ```
 
 See [`cli/README.md`](cli/README.md#install) for pip/editable options and upgrade commands.
@@ -90,19 +90,21 @@ See [`cli/README.md`](cli/README.md#install) for pip/editable options and upgrad
 | Reproduce benchmark evidence, presentations, or pinned CI baselines | Checkout the pinned sample (`python scripts/checkout_sample.py`) or clone [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) — see [`docs/presentation/README.md`](docs/presentation/README.md) |
 | Contribute to the CLI | Clone; editable install — see [Contributing](#contributing) |
 
-Resolved in [#97](https://github.com/mnafshin/springdocker/issues/97) — see [`docs/adr/0006-pypi-first-distribution.md`](docs/adr/0006-pypi-first-distribution.md).
+Resolved in [#97](https://github.com/mnafshin/dockly/issues/97) — see [`docs/adr/0006-pypi-first-distribution.md`](docs/adr/0006-pypi-first-distribution.md).
 
 ## Project naming
 
-**dockly** is the product name — policy-driven Dockerfile generation with Java/Spring first-party strategies ([ADR 0011](docs/adr/0011-dockly-product-vision.md)).
+**dockly** is the canonical name for this project — use it when searching GitHub or PyPI, installing the package, or running the CLI ([ADR 0011](docs/adr/0011-dockly-product-vision.md)).
 
-| Surface | Name | Notes |
-|---|---|---|
-| GitHub repository | [`mnafshin/dockly`](https://github.com/mnafshin/dockly) | Canonical |
-| Product / docs | `dockly` | This README and POSITIONING |
-| PyPI / CLI / config / Action / env | Migrating from `springdocker` → `dockly` | Tracked in [#3](https://github.com/mnafshin/dockly/issues/3) |
+| Surface | Name |
+|---|---|
+| GitHub repository | [`mnafshin/dockly`](https://github.com/mnafshin/dockly) |
+| PyPI package / `pip install` | `dockly` |
+| CLI command | `dockly` |
+| Config file | `.dockly.toml` (legacy `.springdocker.toml` still loaded if present) |
+| Env vars | `DOCKLY_*` (legacy `SPRINGDOCKER_*` still honored) |
 
-Until [#3](https://github.com/mnafshin/dockly/issues/3) lands, installable surfaces may still use the legacy `springdocker` names (package, console script, `.springdocker.toml`, `SPRINGDOCKER_*`). Optional compatibility for springdocker users: [#9](https://github.com/mnafshin/dockly/issues/9).
+Java builder plugins still use `springdocker-*` coordinates until [#4](https://github.com/mnafshin/dockly/issues/4). Broader migration/shim policy: [#9](https://github.com/mnafshin/dockly/issues/9).
 
 The string **`java-spring-docker`** appears in the separate benchmark sample app, not in the CLI package:
 
@@ -112,7 +114,7 @@ The string **`java-spring-docker`** appears in the separate benchmark sample app
 | Local checkout path | `samples/java-spring-docker/` (gitignored; via `scripts/checkout_sample.py`) | Where CI and docs expect the sample after checkout |
 | Sample Maven/Gradle artifact | `io.github.mnafshin:java-spring-docker` | Demo application identity inside that sample |
 
-Those sample names predate the **dockly** product name. They do not affect CLI usage after install.
+Those sample names predate the **dockly** product name. They do not affect installation (`pip install dockly`) or CLI usage.
 
 ## Why dockly instead of Jib or Buildpacks?
 
@@ -138,8 +140,8 @@ Core owns detect → policy → generate → explain → verify. Strategies own 
 
 The repo is split into these main surfaces:
 
-- `src/springdocker/` - installable CLI package (renaming to `dockly` in [#3](https://github.com/mnafshin/dockly/issues/3)).
-- `cli/README.md` - command reference and configuration details.
+- `src/dockly/` — installable CLI package and core implementation.
+- `cli/README.md` — command reference and configuration details.
 
 See [Sample project map](#sample-project-map) for which Spring Boot path to use.
 
@@ -150,13 +152,13 @@ See [Sample project map](#sample-project-map) for which Spring Boot path to use.
 **Optional / sample-anchored:** full benchmark runs, performance comparison tables, and reference evidence from [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) (checked out to `samples/java-spring-docker/`).
 
 - Detects Maven or Gradle projects.
-- Writes a starter `.springdocker.toml` config.
+- Writes a starter `.dockly.toml` config.
 - Generates Dockerfiles with opinionated Spring Boot defaults (`jvm-balanced`: **distroless** runtime + custom **jlink** runtime + layered JAR).
 - Pins generated base images by digest when known.
 - Creates benchmark variants and runs benchmark suites (requires Docker and `[benchmark]` extra).
 - Summarizes benchmark CSV output as a table or JSON.
 
-Digest pins are centralized in `src/springdocker/digest_pins.py` and verified in CI.
+Digest pins are centralized in `src/dockly/digest_pins.py` and verified in CI.
 Runbook: [`docs/security.md`](docs/security.md#digest-pins) · Renovate template: [`.github/renovate.json`](.github/renovate.json)
 
 ## Sample project map
@@ -176,49 +178,49 @@ Install from PyPI first (see [Install](#install)). Then run against **your** Spr
 
 ```bash
 cd /path/to/your-spring-boot-app
-springdocker setup --ci
-# optional: springdocker setup --verify
-# existing project: springdocker setup --ci-only
-# interactive profiles: springdocker setup --interactive
+dockly setup --ci
+# optional: dockly setup --verify
+# existing project: dockly setup --ci-only
+# interactive profiles: dockly setup --interactive
 ```
 
 Step-by-step equivalent (same result as `setup`):
 
 ```bash
-springdocker doctor
-springdocker init --build-tool maven          # if you only want a starter config
-springdocker configure --force                # interactive strategy
-springdocker dockerfile generate
-springdocker verify --dockerfile Dockerfile.generated --check-config-drift
+dockly doctor
+dockly init --build-tool maven          # if you only want a starter config
+dockly configure --force                # interactive strategy
+dockly dockerfile generate
+dockly verify --dockerfile Dockerfile.generated --check-config-drift
 ```
 
 To try the CLI without your own app, clone this repo and use the minimal fixtures (see [Sample project map](#sample-project-map)):
 
 ```bash
-git clone https://github.com/mnafshin/springdocker.git
-cd springdocker
-pipx install 'springdocker[benchmark]'   # or: pip install -e '.[dev]' for contributing
+git clone https://github.com/mnafshin/dockly.git
+cd dockly
+pipx install 'dockly[benchmark]'   # or: pip install -e '.[dev]' for contributing
 
-springdocker setup --project-root tests/fixtures/maven-only
+dockly setup --project-root tests/fixtures/maven-only
 ```
 
 **Benchmark workflow** (optional; requires Docker + `[benchmark]` extra) — check out the reference sample first:
 
 ```bash
-cd springdocker   # repository root after clone
+cd dockly   # repository root after clone
 python scripts/checkout_sample.py
-springdocker benchmark generate --project-root samples/java-spring-docker --java-version 25
-springdocker benchmark run --project-root samples/java-spring-docker --profile quick
-springdocker benchmark analyze --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/01-custom-jre-jlink/results/raw.csv --format table
-springdocker benchmark compare --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/01-custom-jre-jlink/results/raw.csv --baseline-variant with-jlink-runtime
-springdocker benchmark analyze --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/03-base-image-choice/results/raw.csv --baseline samples/java-spring-docker/benchmarks/03-base-image-choice/results/baseline.json
+dockly benchmark generate --project-root samples/java-spring-docker --java-version 25
+dockly benchmark run --project-root samples/java-spring-docker --profile quick
+dockly benchmark analyze --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/01-custom-jre-jlink/results/raw.csv --format table
+dockly benchmark compare --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/01-custom-jre-jlink/results/raw.csv --baseline-variant with-jlink-runtime
+dockly benchmark analyze --project-root samples/java-spring-docker samples/java-spring-docker/benchmarks/03-base-image-choice/results/raw.csv --baseline samples/java-spring-docker/benchmarks/03-base-image-choice/results/baseline.json
 ```
 
 **Default runtime:** `dockerfile generate` with `--recipe jvm-balanced` (the default) uses **`runtime_image = distroless`**: a digest-pinned `gcr.io/distroless/base-*:nonroot` stage plus a jlink-built JVM and layered Spring Boot JAR — not a full OS image. Distroless images have no shell, so generated Dockerfiles **omit `HEALTHCHECK`**; configure readiness probes in Kubernetes or your orchestrator. OS runtime bases are compared in benchmark scenario **03** — see [`cli/README.md`](cli/README.md#dockerfile-recipes).
 
 ## CLI workflow
 
-1. `setup` — one-shot onboarding (detect → write `.springdocker.toml` → generate Dockerfile).
+1. `setup` — one-shot onboarding (detect → write `.dockly.toml` → generate Dockerfile).
 2. `doctor` checks the project root and build tool.
 3. `init` / `configure` write or refine config (use when you need more control than `setup`).
 4. `dockerfile generate` writes a Dockerfile to the requested path (default recipe: distroless + jlink layered JAR).
@@ -232,7 +234,7 @@ See `cli/README.md` for the command reference and config precedence rules.
 
 Optional evidence subsystem — see [`docs/benchmarks.md`](docs/benchmarks.md) for the measurement model, **scenario index**, run profiles, and artifact policy.
 
-Requires `springdocker[benchmark]`. Sample scenarios live in [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) under `benchmarks/` (most output gitignored). Scenario 03 CI baseline: `benchmarks/03-base-image-choice/results/` in that repo (pinned via `scripts/java_spring_docker_sample.manifest.json`).
+Requires `dockly[benchmark]`. Sample scenarios live in [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) under `benchmarks/` (most output gitignored). Scenario 03 CI baseline: `benchmarks/03-base-image-choice/results/` in that repo (pinned via `scripts/java_spring_docker_sample.manifest.json`).
 
 ## Supported stack
 
@@ -271,7 +273,7 @@ Experimental: [`docs/native-aot.md`](docs/native-aot.md). Sample app: [`mnafshin
 
 ## Comparison with adjacent tools
 
-| Tool | Focus | What springdocker adds |
+| Tool | Focus | What dockly adds |
 |---|---|---|
 | Jib | Dockerless image build | reviewable Dockerfile + verify |
 | Buildpacks | Opinionated platform build | explicit Dockerfile + optional benchmarks |

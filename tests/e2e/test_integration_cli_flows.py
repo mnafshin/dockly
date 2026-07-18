@@ -13,7 +13,7 @@ from tests.test_support import ROOT, add_src_to_path
 
 add_src_to_path()
 
-from springdocker.cli import main
+from dockly.cli import main
 
 FIXTURES = ROOT / "tests" / "fixtures"
 
@@ -59,8 +59,8 @@ class CliIntegrationTests(unittest.TestCase):
                 return _FakeCompleted(stdout="1048576")
             return _FakeCompleted(returncode=0, stdout="")
 
-        with patch("springdocker.benchmarks.runner._wait_readiness", return_value=100), patch(
-            "springdocker.benchmarks.runner.subprocess.run", side_effect=fake_run
+        with patch("dockly.benchmarks.runner._wait_readiness", return_value=100), patch(
+            "dockly.benchmarks.runner.subprocess.run", side_effect=fake_run
         ):
             code = main(
                 [
@@ -93,7 +93,7 @@ class CliIntegrationTests(unittest.TestCase):
                 td, project = self._workspace_from_fixture(fixture_name)
                 self.addCleanup(td.cleanup)
                 build_tool = "gradle" if fixture_name == "gradle-only" else "maven"
-                (project / ".springdocker.toml").write_text(
+                (project / ".dockly.toml").write_text(
                     "[project]\n"
                     f'build_tool = "{build_tool}"\n\n'
                     "[dockerfile]\n"

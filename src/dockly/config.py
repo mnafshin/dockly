@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from springdocker.runtime_images import parse_base_image_variants
+from dockly.runtime_images import parse_base_image_variants
 
 try:
     import tomllib  # Python 3.11+
@@ -14,6 +14,29 @@ except ModuleNotFoundError:  # pragma: no cover - exercised on Python < 3.11
 
 # Sentinel: auto-detect actuator healthcheck at generate time.
 HEALTHCHECK_AUTO = "__auto__"
+
+# Primary config filename; legacy springdocker name accepted as read fallback (#3 / #9).
+PRIMARY_CONFIG_NAME = ".dockly.toml"
+LEGACY_CONFIG_NAME = ".springdocker.toml"
+
+
+def find_config_path(project_root: Path) -> Path:
+    """Resolve config path: `.dockly.toml` if present, else legacy `.springdocker.toml`, else primary for writes."""
+    primary = project_root / PRIMARY_CONFIG_NAME
+    if primary.is_file():
+        return primary
+    legacy = project_root / LEGACY_CONFIG_NAME
+    if legacy.is_file():
+        return legacy
+    return primary
+
+
+def load_project_config(project_root: Path, strict: bool = True) -> dict[str, Any]:
+    """Load config from the resolved project path; missing file yields empty dict."""
+    path = find_config_path(project_root)
+    if not path.is_file():
+        return {}
+    return load_config(path, strict=strict)
 
 
 @dataclass(frozen=True)
@@ -100,11 +123,11 @@ class BenchmarkRunConfig:
 
 
 def render_default_config(build_tool: str, profile: str = "quick") -> str:
-    """Render starter .springdocker.toml content."""
+    """Render starter .dockly.toml content."""
     if profile not in {"quick", "full"}:
         raise ValueError("benchmark profile must be 'quick' or 'full'")
     return (
-        "# springdocker project configuration\n"
+        "# dockly project configuration\n"
         "# Precedence: CLI flags > this file > internal defaults\n\n"
         "[project]\n"
         f'build_tool = "{build_tool}"\n\n'
@@ -123,7 +146,7 @@ def render_default_config(build_tool: str, profile: str = "quick") -> str:
         '# jlink_baseline_modules = ["java.desktop", "java.logging", "java.naming", "java.management"]\n'
         "# Omit jlink_baseline_modules to auto-detect from Spring Web starters at generate time.\n"
         "# Set jlink_baseline_modules = [] to disable built-in baseline injection.\n"
-        "# Config-first workflow: run `springdocker configure` to set options interactively.\n"
+        "# Config-first workflow: run `dockly configure` to set options interactively.\n"
         "# runtime_image = \"distroless\"\n"
         "# use_jlink = true\n"
         "# enable_appcds = true  # available on Java 17+\n"

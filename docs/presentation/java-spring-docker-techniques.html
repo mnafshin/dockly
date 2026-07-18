@@ -406,11 +406,11 @@ $/month  ≈ GB/month × effective_$/GB</code></pre>
       <span class="badge">Durable baseline</span>
       <h2>Strategy in git. Dockerfile as output. Drift fails CI.</h2>
       <div class="grid grid-3" style="margin-top: 1.0em;">
-        <div class="card"><h4>1 · Strategy</h4><p><code>.springdocker.toml</code> — reviewable decisions (runtime, jlink, SBOM, pins…). The decision map as config.</p></div>
+        <div class="card"><h4>1 · Strategy</h4><p><code>.dockly.toml</code> — reviewable decisions (runtime, jlink, SBOM, pins…). The decision map as config.</p></div>
         <div class="card"><h4>2 · Artifact</h4><p>Generated Dockerfile — multi-stage, layered JAR, jlink/distroless, hygiene. Owned, editable, in the PR.</p></div>
         <div class="card"><h4>3 · Gate</h4><p><code>verify</code> (+ config-drift) — merges fail when the Dockerfile stops matching the strategy.</p></div>
       </div>
-      <p style="font-size: 0.95em; margin-top: 1.0em;">That is what <strong>springdocker</strong> encodes from this talk — not a black-box image builder; a Dockerfile you still own.</p>
+      <p style="font-size: 0.95em; margin-top: 1.0em;">That is what <strong>dockly</strong> encodes from this talk — not a black-box image builder; a Dockerfile you still own.</p>
       <div class="pill-row" style="margin-top: 0.8em;">
         <span class="pill">Jib / Buildpacks → opaque</span>
         <span class="pill">Hand-written → drifts</span>
@@ -423,11 +423,11 @@ $/month  ≈ GB/month × effective_$/GB</code></pre>
   <!-- CLOSE -->
   <section data-background-gradient="radial-gradient(circle at 50% 40%,#1d3c34 0%,#0a0d12 60%)">
     <span class="badge">Try it</span>
-    <h2>springdocker</h2>
+    <h2>dockly</h2>
     <p style="font-size: 0.95em; max-width: 42ch; margin-top: 0.6em;">Open-sourced path for the durable baseline: config in git, generated Dockerfile you own, verify in CI. Everything in this deck still works by hand.</p>
     <div class="pill-row" style="margin-top: 1.2em;">
-      <span class="pill">github.com/mnafshin/springdocker</span>
-      <span class="pill">pip install springdocker</span>
+      <span class="pill">github.com/mnafshin/dockly</span>
+      <span class="pill">pip install dockly</span>
     </div>
     <aside class="notes">Keep under 20 seconds — the bridge already introduced the idea. Offer Q&amp;A; no demo unless asked.</aside>
   </section>

@@ -11,9 +11,9 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.cli import build_parser, main
-from springdocker.commands import cmd_setup
-from springdocker.configure_wizard import apply_profile_to_config
+from dockly.cli import build_parser, main
+from dockly.commands import cmd_setup
+from dockly.configure_wizard import apply_profile_to_config
 
 
 class SetupCommandTests(unittest.TestCase):
@@ -33,7 +33,7 @@ class SetupCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            cfg = root / ".springdocker.toml"
+            cfg = root / ".dockly.toml"
             resolved, warning = apply_profile_to_config(root, cfg, force=False)
             self.assertIsNone(warning)
             self.assertEqual(resolved.profile, "production-balanced")
@@ -53,9 +53,9 @@ class SetupCommandTests(unittest.TestCase):
             (root / "src/main/resources/application.properties").write_text("server.port=8080\n", encoding="utf-8")
             stdout = StringIO()
             with redirect_stdout(stdout):
-                code = cmd_setup(root, None, root / ".springdocker.toml")
+                code = cmd_setup(root, None, root / ".dockly.toml")
             self.assertEqual(code, 0)
-            self.assertTrue((root / ".springdocker.toml").exists())
+            self.assertTrue((root / ".dockly.toml").exists())
             self.assertTrue((root / "Dockerfile.generated").exists())
             self.assertIn("wrote config:", stdout.getvalue())
             self.assertIn("wrote dockerfile:", stdout.getvalue())
@@ -65,7 +65,7 @@ class SetupCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            cfg = root / ".springdocker.toml"
+            cfg = root / ".dockly.toml"
             cfg.write_text('[project]\nbuild_tool = "maven"\n', encoding="utf-8")
             code = cmd_setup(root, None, cfg, force=False)
             self.assertEqual(code, 2)
@@ -74,7 +74,7 @@ class SetupCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            cfg = root / ".springdocker.toml"
+            cfg = root / ".dockly.toml"
             cfg.write_text('[project]\nbuild_tool = "maven"\n\n[dockerfile]\nruntime_image = "temurin"\n', encoding="utf-8")
             code = cmd_setup(root, None, cfg, force=True, profile="simplest")
             self.assertEqual(code, 0)
@@ -94,8 +94,8 @@ class SetupCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            with patch("springdocker.commands.cmd_verify", return_value=0) as verify:
-                code = cmd_setup(root, None, root / ".springdocker.toml", verify=True)
+            with patch("dockly.commands.cmd_verify", return_value=0) as verify:
+                code = cmd_setup(root, None, root / ".dockly.toml", verify=True)
             self.assertEqual(code, 0)
             verify.assert_called_once()
             self.assertTrue((root / "sbom.spdx.json").exists())
@@ -105,14 +105,14 @@ class SetupCommandTests(unittest.TestCase):
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
             with self.assertRaises(ValueError):
-                apply_profile_to_config(root, root / ".springdocker.toml", profile="custom")
+                apply_profile_to_config(root, root / ".dockly.toml", profile="custom")
 
     def test_setup_interactive_delegates_to_configure(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "pom.xml").write_text("<project/>", encoding="utf-8")
-            with patch("springdocker.commands.cmd_configure", return_value=0) as configure:
-                code = cmd_setup(root, None, root / ".springdocker.toml", interactive=True)
+            with patch("dockly.commands.cmd_configure", return_value=0) as configure:
+                code = cmd_setup(root, None, root / ".dockly.toml", interactive=True)
             self.assertEqual(code, 0)
             configure.assert_called_once()
             kwargs = configure.call_args.kwargs

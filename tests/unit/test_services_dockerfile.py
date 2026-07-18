@@ -9,8 +9,8 @@ from tests.test_support import add_src_to_path
 
 add_src_to_path()
 
-from springdocker.dockerfile import NATIVE_AOT_SCAFFOLD_WARNING
-from springdocker.services.dockerfile_service import generate_dockerfile, parse_must_have_modules
+from dockly.dockerfile import NATIVE_AOT_SCAFFOLD_WARNING
+from dockly.services.dockerfile_service import generate_dockerfile, parse_must_have_modules
 
 
 class DockerfileServiceTests(unittest.TestCase):
@@ -128,7 +128,7 @@ class DockerfileServiceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             with patch(
-                "springdocker.services.dockerfile_service.render_recipe_from_plugins",
+                "dockly.services.dockerfile_service.render_recipe_from_plugins",
                 return_value=type("R", (), {"rendered": "FROM scratch\n", "handled": True, "warnings": ()})(),
             ):
                 generated = generate_dockerfile(
