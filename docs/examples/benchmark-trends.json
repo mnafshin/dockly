@@ -1,0 +1,28 @@
+{
+  "note": "Trend payload shape example. Values from java-spring-docker-sample benchmarks/03-base-image-choice/results/baseline.json (quick profile, host-specific — not universal guarantees).",
+  "generated_at": "2026-06-18",
+  "source": "https://github.com/mnafshin/java-spring-docker-sample/blob/main/benchmarks/03-base-image-choice/results/baseline.json",
+  "run_profile": "quick",
+  "series": [
+    {
+      "scenario": "03-base-image-choice",
+      "metric": "startup_avg_ms",
+      "points": [
+        {"variant": "alpine", "value": 1583.0},
+        {"variant": "debian-slim", "value": 1583.7},
+        {"variant": "distroless", "value": 1510.7},
+        {"variant": "ubuntu", "value": 1672.7}
+      ]
+    },
+    {
+      "scenario": "03-base-image-choice",
+      "metric": "image_mb_avg",
+      "points": [
+        {"variant": "alpine", "value": 62.35},
+        {"variant": "debian-slim", "value": 85.94},
+        {"variant": "distroless", "value": 67.67},
+        {"variant": "ubuntu", "value": 85.85}
+      ]
+    }
+  ]
+}

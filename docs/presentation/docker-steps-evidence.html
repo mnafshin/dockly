@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Docker Steps with Evidence — Why Each Choice Matters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="assets/evidence-deck.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- benchmark-updated: 2026-06-19T22:40:20Z -->
+
+<div class="reveal">
+<div class="slides">
+
+  <!-- OPENING -->
+  <section>
+    <section data-background-gradient="linear-gradient(135deg,#0a0d12 0%,#14201f 100%)">
+      <span class="badge">JUG · Spring Boot containers</span>
+      <h1 class="hero-title">Docker steps<br><em>with evidence</em></h1>
+      <p class="muted">Why each Dockerfile decision exists — and what you gain from scenarios 01–05</p>
+      <p class="tiny" style="margin-top: 0.6em;">Sample evidence: Spring Boot 4 · <strong>Java 25</strong> · CLI supports Java <strong>17+</strong> (AOT / scenario 02 need 24+)</p>
+      <p class="tiny" style="margin-top: 1.2em;">STEPS &amp; BENEFITS · Press → · Speaker notes: <kbd>S</kbd></p>
+      <aside class="notes">Frame the talk: most teams can build a container; fewer can explain why each line is there.</aside>
+    </section>
+
+    <section>
+      <span class="badge">Audience</span>
+      <h2>Who this talk is for</h2>
+      <div class="grid grid-3" style="margin-top: 1em;">
+        <div class="card"><h4>Backend engineers</h4><p>Shipping Spring Boot on Kubernetes and tuning cold start.</p></div>
+        <div class="card"><h4>Platform / DevOps</h4><p>CI image pipelines, registry cost, and fleet efficiency.</p></div>
+        <div class="card"><h4>Tech leads</h4><p>Balancing delivery speed, security policy, and operational risk.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="badge bad">The gap</span>
+      <h2>Most teams can build a Java container</h2>
+      <p style="font-size: 1.1em; margin-top: 0.6em;">Few teams can <span class="accent">defend each Dockerfile decision with data</span>.</p>
+      <div class="grid grid-2" style="margin-top: 1.2em;">
+        <div class="card danger"><h4>Without evidence</h4><p>Blog copy-paste, outdated bases, untuned containers, security gaps.</p></div>
+        <div class="card"><h4>With evidence</h4><p>Scenario comparisons, repeatable runs, p95 startup, CI regression gates.</p></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- DECISION FRAMEWORK -->
+  <section>
+    <section>
+      <span class="badge">Decision model</span>
+      <h2>Two kinds of Docker decisions</h2>
+      <table>
+        <thead><tr><th>Type</th><th>How to decide</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td>Policy</td><td class="good">Always enforce — no benchmark needed</td><td>non-root, digest pins, SBOM, verify gates</td></tr>
+          <tr><td>Performance</td><td class="warn">Benchmark before adopting</td><td>jlink, AOT, AppCDS, base image</td></tr>
+        </tbody>
+      </table>
+      <p class="scenario-foot">Standardize policy. Benchmark performance. Choose deliberately.</p>
+      <p class="tiny">Each scenario decision slide includes <code>[dockerfile]</code> config key → ON/OFF Dockerfile fragments.</p>
+    </section>
+
+    <section>
+      <span class="badge">Methodology</span>
+      <h2>What makes the numbers credible</h2>
+      <ul class="step-list">
+        <li>One scenario per architectural choice (01–05 in the sample harness)</li>
+        <li>Multiple runs per variant — full profile for production decisions</li>
+        <li>Build time, image size, startup to readiness endpoint</li>
+        <li>p95 startup and regression checks in CI</li>
+      </ul>
+      <pre><code class="language-bash" data-trim data-noescape>springdocker benchmark generate --project-root .
+springdocker benchmark run --profile full --runner-arg=--skip-native
+springdocker benchmark analyze benchmarks/01-custom-jre-jlink/results/raw.csv</code></pre>
+    </section>
+
+    <section>
+      <span class="badge warn">Caveats</span>
+      <h2>Threats to validity</h2>
+      <div class="grid grid-3" style="margin-top: 0.8em;">
+        <div class="card warn"><h4>Host variance</h4><p>Absolute ms change across laptops and CI runners.</p></div>
+        <div class="card warn"><h4>Workload shape</h4><p>Web API vs batch vs CPU-heavy changes the winner.</p></div>
+        <div class="card warn"><h4>Competing goals</h4><p>Cold start, throughput, and image size rarely align.</p></div>
+      </div>
+      <p class="muted" style="margin-top: 0.8em;">Use findings as decision guidance for <em>your</em> service — not universal laws.</p>
+    </section>
+
+    <section>
+      <span class="badge">Executive summary</span>
+      <h2>Reference snapshot — full profile</h2>
+      <table>
+        <thead><tr><th>Scenario</th><th>Default</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>01 JLink + jdeps</td><td class="good">ON (+ must-have modules)</td><td>Major size win, stable startup</td></tr>
+          <tr><td>02 JEP 483 AOT cache</td><td class="warn">Java 24+ only</td><td>Generated when project Java ≥ 24; sample runs 25</td></tr>
+          <tr><td>03 Base image</td><td class="good">Distroless + jlink</td><td><code>production-balanced</code> profile default; scenario 03 compares OS bases</td></tr>
+          <tr><td>04 Native vs JVM</td><td class="warn">Scaffold / selective</td><td>Cold start vs build time tradeoff</td></tr>
+          <tr><td>05 AppCDS</td><td class="good">ON when layered JAR (Java 17+)</td><td>Faster startup from shared archive</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </section>
+
+
+
+  <!-- SCENARIO 01 -->
+  <section>
+    <section>
+      <span class="badge">Scenario 01</span>
+      <h2>JLink custom runtime</h2>
+      <p class="scenario-foot">Layered JAR on three JVM paths: custom jlink, vendor JRE copied onto debian-slim, and stock Temurin JRE image.</p>
+      <table class="bench-table" style="margin-top: 0.8em;">
+        <thead><tr><th>Variant</th><th>Image</th><th>Build avg</th><th>Startup avg</th><th>Startup p95</th></tr></thead>
+        <tbody>
+          <tr><td>with-jlink</td><td class="good"><span data-benchmark="01-custom-jre-jlink/with-jlink-runtime/image_mb_avg">85.94 MB</span></td><td class="good"><span data-benchmark="01-custom-jre-jlink/with-jlink-runtime/build_avg_ms">610 ms</span></td><td class="good"><span data-benchmark="01-custom-jre-jlink/with-jlink-runtime/startup_avg_ms">1,367 ms</span></td><td><span data-benchmark="01-custom-jre-jlink/with-jlink-runtime/startup_p95_ms">1,704 ms</span></td></tr>
+          <tr><td>vendor JRE on debian</td><td><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/image_mb_avg">107.35 MB</span></td><td><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/build_avg_ms">625 ms</span></td><td class="risk"><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/startup_avg_ms">1,556 ms</span></td><td class="good"><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/startup_p95_ms">1,639 ms</span></td></tr>
+          <tr><td>temurin-jre image</td><td class="risk"><span data-benchmark="01-custom-jre-jlink/temurin-jre-image/image_mb_avg">130.28 MB</span></td><td class="risk"><span data-benchmark="01-custom-jre-jlink/temurin-jre-image/build_avg_ms">685 ms</span></td><td><span data-benchmark="01-custom-jre-jlink/temurin-jre-image/startup_avg_ms">1,385 ms</span></td><td class="risk"><span data-benchmark="01-custom-jre-jlink/temurin-jre-image/startup_p95_ms">2,093 ms</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <span class="badge">Decision 01</span>
+      <h2>Use jlink + jdeps with curated must-have modules</h2>
+      <pre><code class="language-bash" data-trim data-noescape>jlink --add-modules java.base,java.logging,… \
+  --strip-debug --compress=2 --output /customjre</code></pre>
+      <ul>
+        <li class="good">Smaller runtime image vs vendor JRE on debian-slim or stock Temurin JRE image (~20–34% in our sample)</li>
+        <li class="warn">Merge <code>must-have.txt</code> modules jdeps misses (JNDI, logging, desktop APIs)</li>
+        <li>Skip only when compatibility or tooling blockers are proven on your app</li>
+      </ul>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">use_jlink = true</span>
+          <span class="config-type perf">Performance · scenario 01</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — jre-builder stage + custom runtime</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jdk AS jre-builder
+RUN jdeps --print-module-deps app.jar > modules.txt
+ARG MUSTHAVE_MODULES="java.desktop,java.logging,…"
+RUN jlink --add-modules "$MODULES" … --output /jre/out
+# runtime stage:
+COPY --from=jre-builder /jre/out /opt/java
+ENV JAVA_HOME=/opt/java</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — vendor JRE copied in</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jre AS vendor-jre
+# runtime stage:
+COPY --from=vendor-jre /opt/java/openjdk /opt/java
+ENV JAVA_HOME=/opt/java
+# distroless: gcr.io/distroless/java25-debian13 instead of base+jlink</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Also: <code>must_have_modules_file</code>, <code>jlink_baseline_modules</code> → <code>ARG MUSTHAVE_MODULES</code></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- SCENARIO 02 -->
+  <section>
+    <section>
+      <span class="badge">Scenario 02</span>
+      <h2>JEP 483 AOT class-loading cache</h2>
+      <table>
+        <thead><tr><th>Variant</th><th>Image</th><th>Build avg</th><th>Startup avg</th><th>Startup p95</th></tr></thead>
+        <tbody>
+          <tr><td>with-aot-cache</td><td class="warn"><span data-benchmark="02-jep483-aot-cache/with-aot-cache/image_mb_avg">180.63 MB</span></td><td class="warn"><span data-benchmark="02-jep483-aot-cache/with-aot-cache/build_avg_ms">641 ms</span></td><td class="good"><span data-benchmark="02-jep483-aot-cache/with-aot-cache/startup_avg_ms">968 ms</span></td><td class="warn"><span data-benchmark="02-jep483-aot-cache/with-aot-cache/startup_p95_ms">1,369 ms</span></td></tr>
+          <tr><td>without-aot-cache</td><td class="good"><span data-benchmark="02-jep483-aot-cache/without-aot-cache/image_mb_avg">167.82 MB</span></td><td class="good"><span data-benchmark="02-jep483-aot-cache/without-aot-cache/build_avg_ms">626 ms</span></td><td class="risk"><span data-benchmark="02-jep483-aot-cache/without-aot-cache/startup_avg_ms">1,248 ms</span></td><td class="good"><span data-benchmark="02-jep483-aot-cache/without-aot-cache/startup_p95_ms">1,350 ms</span></td></tr>
+        </tbody>
+      </table>
+      <p class="scenario-foot">Java 24+ only (hard-fail below 24) · requires jlink · mutually exclusive with AppCDS · sample harness uses Java 25</p>
+    </section>
+    <section>
+      <span class="badge warn">Decision 02</span>
+      <h2>Adopt when startup tail latency matters</h2>
+      <p>Average startup moved modestly; <strong>p95 improved more</strong> — that is often what autoscaling feels.</p>
+      <div class="card warn" style="margin-top: 0.8em;"><h4>Override trigger</h4><p>No repeatable p95 gain on your service after a full-profile run.</p></div>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">enable_jep483_aot_cache = true</span>
+          <span class="config-type perf">Performance · scenario 02 · requires use_jlink</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — aot-trainer stage + runtime flag</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jre AS aot-trainer
+COPY --from=jre-builder /jre/out /opt/java
+RUN java -XX:AOTCacheOutput=/app/app.aot … JarLauncher
+COPY --from=aot-trainer /app/app.aot /app/app.aot
+ENTRYPOINT ["java", "-XX:AOTCache=/app/app.aot", …]</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — no trainer stage</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape># no aot-trainer stage
+# no COPY app.aot
+ENTRYPOINT ["java", …, "JarLauncher"]</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Mutually exclusive with <code>enable_appcds</code> · Java 24+ only (generator omits this scenario when Java &lt; 24)</div>
+      </div>
+    </section>
+  </section>
+
+
+  <!-- SCENARIO 03 -->
+  <section>
+    <section>
+      <span class="badge">Scenario 03</span>
+      <h2>Base image choice</h2>
+      <table>
+        <thead><tr><th>Variant</th><th>Image</th><th>Build avg</th><th>Startup avg</th><th>Startup p95</th></tr></thead>
+        <tbody>
+          <tr><td>alpine</td><td class="good"><span data-benchmark="03-base-image-choice/alpine/image_mb_avg">62.35 MB</span></td><td><span data-benchmark="03-base-image-choice/alpine/build_avg_ms">936 ms</span></td><td><span data-benchmark="03-base-image-choice/alpine/startup_avg_ms">1,583 ms</span></td><td class="good"><span data-benchmark="03-base-image-choice/alpine/startup_p95_ms">1,586 ms</span></td></tr>
+          <tr><td>debian-bookworm-slim</td><td class="risk"><span data-benchmark="03-base-image-choice/debian-slim/image_mb_avg">85.94 MB</span></td><td class="good"><span data-benchmark="03-base-image-choice/debian-slim/build_avg_ms">616 ms</span></td><td><span data-benchmark="03-base-image-choice/debian-slim/startup_avg_ms">1,584 ms</span></td><td><span data-benchmark="03-base-image-choice/debian-slim/startup_p95_ms">1,596 ms</span></td></tr>
+          <tr><td>ubuntu</td><td><span data-benchmark="03-base-image-choice/ubuntu/image_mb_avg">85.85 MB</span></td><td class="risk"><span data-benchmark="03-base-image-choice/ubuntu/build_avg_ms">984 ms</span></td><td class="risk"><span data-benchmark="03-base-image-choice/ubuntu/startup_avg_ms">1,673 ms</span></td><td class="risk"><span data-benchmark="03-base-image-choice/ubuntu/startup_p95_ms">2,060 ms</span></td></tr>
+          <tr><td>distroless-nonroot</td><td><span data-benchmark="03-base-image-choice/distroless/image_mb_avg">67.67 MB</span></td><td><span data-benchmark="03-base-image-choice/distroless/build_avg_ms">959 ms</span></td><td class="good"><span data-benchmark="03-base-image-choice/distroless/startup_avg_ms">1,511 ms</span></td><td><span data-benchmark="03-base-image-choice/distroless/startup_p95_ms">1,611 ms</span></td></tr>
+        </tbody>
+      </table>
+      <p class="scenario-foot">All variants use the same jlink runtime; the table compares OS base and hardening tradeoffs (size, build time, startup).</p>
+    </section>
+    <section>
+      <span class="badge">Decision 03</span>
+      <h2>Smallest image ≠ best production choice</h2>
+      <p><span class="good">distroless + jlink</span> is the <code>production-balanced</code> profile default — strong size and startup in scenario 03 evidence. <strong>debian-slim</strong> still wins on build time when CI speed matters most.</p>
+      <div class="grid grid-2" style="margin-top: 0.8em;">
+        <div class="card"><h4>Pick alpine</h4><p>When every MB counts and musl compatibility is verified.</p></div>
+        <div class="card"><h4>Pick distroless</h4><p>When non-root hardening and smaller pulls matter more than build speed.</p></div>
+      </div>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">runtime_image = "distroless"</span>
+          <span class="config-type perf">Performance · scenario 03</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>distroless (default profile)</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM gcr.io/distroless/base-debian13:nonroot@sha256:…
+COPY --from=jre-builder /jre/out /opt/java
+USER nonroot
+# no HEALTHCHECK — no shell</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>OS bases (debian / alpine / ubuntu)</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM debian:bookworm-slim@sha256:…
+RUN groupadd … && useradd … javauser
+COPY --chown=1001:1001 /layers/… ./
+USER 1001
+# optional HEALTHCHECK with wget</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Values: <code>distroless</code> · <code>debian-slim</code> · <code>alpine</code> · <code>ubuntu</code> · <code>temurin</code></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- SCENARIO 04 -->
+  <section>
+    <section>
+      <span class="badge warn">Scenario 04</span>
+      <h2>Native image vs JVM</h2>
+      <table class="bench-table" style="margin-top: 0.8em;">
+        <thead><tr><th>Variant</th><th>Image</th><th>Build avg</th><th>Startup avg</th></tr></thead>
+        <tbody>
+          <tr><td>native-aot*</td><td>55.7 MB*</td><td>~635 s*</td><td>308 ms*</td></tr>
+          <tr><td>JVM baseline (scenario 01)</td><td><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/image_mb_avg">107.35 MB</span></td><td><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/build_avg_ms">625 ms</span></td><td><span data-benchmark="01-custom-jre-jlink/without-jlink-runtime/startup_avg_ms">1,556 ms</span></td></tr>
+        </tbody>
+      </table>
+      <p class="scenario-foot">* native-aot row is published reference only (scaffold recipe; runner skips scenario 04) · JVM row from scenario 01 without-jlink-runtime</p>
+    </section>
+    <section>
+      <span class="badge warn">Decision 04</span>
+      <h2>Choose by workload shape — benchmark both paths</h2>
+      <div class="grid grid-2">
+        <div class="card"><h4>Native wins when</h4><p>Cold start and footprint dominate (scale-to-zero, edge, burst traffic).</p></div>
+        <div class="card warn"><h4>JVM wins when</h4><p>Sustained throughput, fast iteration, and reflection-heavy stacks matter.</p></div>
+      </div>
+      <p class="muted" style="margin-top: 0.8em;">springdocker generates a native scaffold Dockerfile; full native workflow is roadmap — not shipped yet.</p>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">recipe = "native-aot"</span>
+          <span class="config-type perf">Performance · scenario 04 · scaffold</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — GraalVM native compile</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM ghcr.io/graalvm/native-image-community:25 AS build
+RUN ./mvnw -Pnative native:compile
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:…
+COPY --from=build /app/target/nativeCompile/* /app/app
+ENTRYPOINT ["/app/app"]</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>Default — recipe = "jvm-balanced"</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jdk AS build
+RUN ./mvnw package -DskipTests
+# jlink + layered JAR runtime (scenarios 01–03)</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Experimental scaffold only — see <code>docs/native-aot.md</code></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- SCENARIO 05 -->
+  <section>
+    <section>
+      <span class="badge">Scenario 05</span>
+      <h2>AppCDS class archive</h2>
+      <table>
+        <thead><tr><th>Variant</th><th>Image</th><th>Build avg</th><th>Startup avg</th><th>Startup p95</th></tr></thead>
+        <tbody>
+          <tr><td>with-appcds</td><td class="warn"><span data-benchmark="05-appcds/with-appcds/image_mb_avg">167.89 MB</span></td><td class="good"><span data-benchmark="05-appcds/with-appcds/build_avg_ms">614 ms</span></td><td class="good"><span data-benchmark="05-appcds/with-appcds/startup_avg_ms">1,262 ms</span></td><td class="warn"><span data-benchmark="05-appcds/with-appcds/startup_p95_ms">1,350 ms</span></td></tr>
+          <tr><td>without-appcds</td><td class="good"><span data-benchmark="05-appcds/without-appcds/image_mb_avg">167.82 MB</span></td><td class="warn"><span data-benchmark="05-appcds/without-appcds/build_avg_ms">622 ms</span></td><td class="warn"><span data-benchmark="05-appcds/without-appcds/startup_avg_ms">1,281 ms</span></td><td class="good"><span data-benchmark="05-appcds/without-appcds/startup_p95_ms">1,337 ms</span></td></tr>
+        </tbody>
+      </table>
+      <p class="scenario-foot">Java 17+ · works with layered JAR · mutually exclusive with JEP 483 AOT in the same image</p>
+      <pre><code data-trim data-noescape># Train at build
+java -XX:ArchiveClassesAtExit=app.jsa -jar app.jar
+# Load at runtime
+java -XX:SharedArchiveFile=app.jsa -jar app.jar</code></pre>
+    </section>
+    <section>
+      <span class="badge">Decision 05</span>
+      <h2>Enable AppCDS when using layered JAR builds</h2>
+      <ul>
+        <li class="good">Train archive in build stage; ship <code>.jsa</code> with the image</li>
+        <li class="good">Lower startup latency without native-image complexity</li>
+        <li class="warn">Compare against end-to-end readiness — not isolated micro-benchmarks alone</li>
+      </ul>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">enable_appcds = true</span>
+          <span class="config-type perf">Performance · scenario 05</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — train in build, load at runtime</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>RUN cd /layers && java -XX:ArchiveClassesAtExit=/layers/app.jsa \
+    -Dspring.context.exit=onRefresh JarLauncher || true
+COPY --from=build /layers/app.jsa /app/app.jsa
+ENTRYPOINT ["java", "-XX:SharedArchiveFile=/app/app.jsa", …]</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — no archive</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape># no ArchiveClassesAtExit RUN
+# no COPY app.jsa
+ENTRYPOINT ["java", …, "JarLauncher"]</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Requires <code>use_layered_jar = true</code> · Java 17+ · mutually exclusive with JEP 483 AOT cache</div>
+      </div>
+    </section>
+  </section>
+
+  <!-- POLICY + SECURITY -->
+  <section>
+    <section>
+      <span class="badge bad">Policy baseline</span>
+      <h2>Non-negotiable in production</h2>
+      <table>
+        <thead><tr><th>Control</th><th>Evidence-backed default</th><th>Typical Dockerfile</th></tr></thead>
+        <tbody>
+          <tr><td>Non-root runtime</td><td class="good">✓</td><td class="risk">✗ root</td></tr>
+          <tr><td>Digest-pinned base</td><td class="good">✓ @sha256</td><td class="risk">✗ floating tag</td></tr>
+          <tr><td>Embedded SBOM</td><td class="good">✓ SPDX</td><td class="risk">✗</td></tr>
+          <tr><td>Readiness healthcheck</td><td class="good">✓ Actuator-aware</td><td class="risk">✗ missing</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section>
+      <span class="badge bad">Policy · digest pins</span>
+      <h2>pin_digests = true</h2>
+      <p class="muted">Immutable <code>@sha256:</code> on <code>FROM</code> lines — not a separate stage. Catalog: <code>src/springdocker/digest_pins.py</code></p>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">pin_digests = true</span>
+          <span class="config-type policy">Policy</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — digest suffix on bases</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jdk@sha256:c2b7ea21… AS build
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:ab7554b6…
+FROM debian:bookworm-slim@sha256:d5d3f9c2…</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — floating tags</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>FROM eclipse-temurin:25-jdk AS build
+FROM gcr.io/distroless/base-debian13:nonroot
+# ubuntu/alpine always float even when pin_digests=true</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">CI: <code>python scripts/verify_digest_pins.py</code> · Renovate rotates pins in <code>digest_pins.py</code></div>
+      </div>
+    </section>
+    <section>
+      <span class="badge bad">Policy · SBOM</span>
+      <h2>include_embedded_sbom = true</h2>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">include_embedded_sbom = true</span>
+          <span class="config-type policy">Policy</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — build + runtime copy</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape># build stage:
+RUN install -d /tmp/sbom && \
+    printf '{"spdxVersion":"SPDX-2.3",…}' > /tmp/sbom/spdx.json
+# runtime stage:
+COPY --from=build /tmp/sbom/spdx.json /usr/share/sbom/spdx.json</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — omitted</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape># no /tmp/sbom RUN
+# no /usr/share/sbom/spdx.json COPY</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot"><code>springdocker verify --check-config-drift</code> fails if config says ON but path missing</div>
+      </div>
+    </section>
+    <section>
+      <span class="badge bad">Policy · non-root &amp; labels</span>
+      <h2>non_root · OCI labels · reproducible controls</h2>
+      <div class="config-map">
+        <div class="config-map-header">
+          <span class="config-key">non_root · include_oci_labels · include_reproducible_controls</span>
+          <span class="config-type policy">Policy</span>
+        </div>
+        <div class="config-map-grid">
+          <div class="config-map-col">
+            <h4>When ON — typical runtime tail</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape>ARG OCI_SOURCE=""
+ARG OCI_REVISION=""
+ARG OCI_CREATED=""
+LABEL org.opencontainers.image.source="${OCI_SOURCE}" …
+USER nonroot          # distroless
+USER 1001             # debian/alpine/ubuntu
+ARG SOURCE_DATE_EPOCH=0
+ENV SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH}"
+STOPSIGNAL SIGTERM</code></pre>
+          </div>
+          <div class="config-map-col off">
+            <h4>When OFF — runs as root, no metadata</h4>
+            <pre><code class="language-dockerfile" data-trim data-noescape># no USER line
+# no LABEL / SOURCE_DATE_EPOCH
+# no STOPSIGNAL</code></pre>
+          </div>
+        </div>
+        <div class="config-map-foot">Healthcheck: <code>healthcheck_path</code> → <code>HEALTHCHECK … wget</code> (OS bases only; omitted on distroless)</div>
+      </div>
+    </section>
+    <section>
+      <span class="badge bad">Anti-pattern</span>
+      <h2>What not to ship</h2>
+      <pre><code class="language-dockerfile" data-trim data-noescape>FROM ubuntu:latest
+RUN apt-get update && apt-get install -y curl vim
+USER root</code></pre>
+      <ul>
+        <li class="risk">Huge attack surface · unnecessary packages · poor SBOM quality</li>
+        <li class="good">Prefer distroless non-root + digest pins + verify gates in CI</li>
+      </ul>
+    </section>
+  </section>
+
+  <!-- CROSS-CUTTING: HOW CHOICES COMPOUND -->
+  <section>
+    <section>
+      <span class="badge pink">Combined impact</span>
+      <h2>How decisions stack — image size</h2>
+      <div style="margin-top: 0.8em;">
+        <div class="bar-row"><span class="label">temurin-jre image</span><div class="bar-wrap"><div class="bar bad" data-benchmark-bar="01-custom-jre-jlink/temurin-jre-image/image_mb_avg" style="width:100%"></div></div><span class="val" data-benchmark="01-custom-jre-jlink/temurin-jre-image/image_mb_avg">130.28 MB</span></div>
+        <div class="bar-row"><span class="label">vendor JRE on debian</span><div class="bar-wrap"><div class="bar warn" data-benchmark-bar="01-custom-jre-jlink/without-jlink-runtime/image_mb_avg" style="width:82%"></div></div><span class="val" data-benchmark="01-custom-jre-jlink/without-jlink-runtime/image_mb_avg">107.35 MB</span></div>
+        <div class="bar-row"><span class="label">with-jlink</span><div class="bar-wrap"><div class="bar" data-benchmark-bar="01-custom-jre-jlink/with-jlink-runtime/image_mb_avg" style="width:66%"></div></div><span class="val" data-benchmark="01-custom-jre-jlink/with-jlink-runtime/image_mb_avg">85.94 MB</span></div>
+        <div class="bar-row"><span class="label">distroless + jlink</span><div class="bar-wrap"><div class="bar" data-benchmark-bar="03-base-image-choice/distroless/image_mb_avg" style="width:52%"></div></div><span class="val" data-benchmark="03-base-image-choice/distroless/image_mb_avg">67.67 MB</span></div>
+        <div class="bar-row"><span class="label">alpine + jlink</span><div class="bar-wrap"><div class="bar" data-benchmark-bar="03-base-image-choice/alpine/image_mb_avg" style="width:48%"></div></div><span class="val" data-benchmark="03-base-image-choice/alpine/image_mb_avg">62.35 MB</span></div>
+        <div class="bar-row"><span class="label">native-aot*</span><div class="bar-wrap"><div class="bar" style="width:39%"></div></div><span class="val">55.7 MB</span></div>
+      </div>
+      <p class="scenario-foot">Same image-size ladder as <code>springdocker-features.html</code> — each bar is an independent scenario lever, not one cumulative Dockerfile. * native reference only · scaffold recipe today</p>
+    </section>
+    <section>
+      <span class="badge pink">Combined impact</span>
+      <h2>How decisions stack — cold start</h2>
+      <div style="margin-top: 0.8em;">
+        <div class="bar-row"><span class="label">JVM baseline</span><div class="bar-wrap"><div class="bar bad" data-benchmark-bar="01-custom-jre-jlink/without-jlink-runtime/startup_avg_ms" style="width:100%"></div></div><span class="val" data-benchmark="01-custom-jre-jlink/without-jlink-runtime/startup_avg_ms">1,556 ms</span></div>
+        <div class="bar-row"><span class="label">with-jlink</span><div class="bar-wrap"><div class="bar warn" data-benchmark-bar="01-custom-jre-jlink/with-jlink-runtime/startup_avg_ms" style="width:88%"></div></div><span class="val" data-benchmark="01-custom-jre-jlink/with-jlink-runtime/startup_avg_ms">1,367 ms</span></div>
+        <div class="bar-row"><span class="label">with AppCDS</span><div class="bar-wrap"><div class="bar" data-benchmark-bar="05-appcds/with-appcds/startup_avg_ms" style="width:81%"></div></div><span class="val" data-benchmark="05-appcds/with-appcds/startup_avg_ms">1,262 ms</span></div>
+        <div class="bar-row"><span class="label">with-aot-cache</span><div class="bar-wrap"><div class="bar" data-benchmark-bar="02-jep483-aot-cache/with-aot-cache/startup_avg_ms" style="width:62%"></div></div><span class="val" data-benchmark="02-jep483-aot-cache/with-aot-cache/startup_avg_ms">968 ms</span></div>
+        <div class="bar-row"><span class="label">native-aot*</span><div class="bar-wrap"><div class="bar" style="width:15%"></div></div><span class="val">308 ms</span></div>
+      </div>
+      <p class="muted" style="margin-top: 0.8em;">Each bar is a different scenario — not one cumulative Dockerfile. Use this to see which lever moves your goal metric.</p>
+    </section>
+  </section>
+
+  <!-- FINAL MATRIX -->
+  <section>
+    <section>
+      <span class="badge">Decision matrix</span>
+      <h2>Defaults and override triggers</h2>
+      <table>
+        <thead><tr><th>Decision</th><th>Default</th><th>Override when</th></tr></thead>
+        <tbody>
+          <tr><td>Security baseline</td><td class="good">Always ON</td><td>Never in production</td></tr>
+          <tr><td>JLink / jdeps</td><td class="good">ON</td><td>Proven module compatibility blocker</td></tr>
+          <tr><td>AppCDS</td><td class="good">ON (Java 17+)</td><td>Build stage cannot train archive</td></tr>
+          <tr><td>JEP 483 AOT cache</td><td class="warn">Java 24+ only</td><td>No repeatable p95 gain · or still on Java 17–23</td></tr>
+          <tr><td>Base image</td><td class="good">Distroless + jlink</td><td>Need shell tooling or musl-only footprint</td></tr>
+          <tr><td>Native image</td><td class="warn">Selective</td><td>Throughput or build-time priority</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <span class="badge">Monday morning</span>
+      <h2>What to do next</h2>
+      <ol class="step-list">
+        <li>Enforce policy baseline — non-root, digests, SBOM, verify in CI</li>
+        <li>Start from distroless + jlink (or run scenario 03 on your bases)</li>
+        <li>Run one full-profile benchmark on a real service</li>
+        <li>Adopt only changes with repeatable p95 or cost improvement</li>
+      </ol>
+      <pre><code class="language-bash" data-trim data-noescape>springdocker init --project-root . --build-tool maven
+springdocker configure --project-root . --force
+springdocker dockerfile generate --project-root .
+springdocker explain --project-root . Dockerfile.generated --config-aware
+springdocker verify --project-root . Dockerfile.generated --check-config-drift</code></pre>
+    </section>
+  </section>
+
+  <!-- CLOSE -->
+  <section data-background-gradient="radial-gradient(circle at 50% 40%,#1d3c34 0%,#0a0d12 60%)">
+    <h1>Questions?</h1>
+    <p class="muted" style="margin-top: 0.8em;">Standardize policy · benchmark performance · choose deliberately</p>
+    <div class="pill-row" style="margin-top: 1.2em;">
+      <span class="pill">github.com/mnafshin/springdocker</span>
+      <span class="pill">docs/presentation/docker-steps-evidence.html</span>
+      <span class="pill">samples/java-spring-docker/benchmarks/</span>
+    </div>
+    <aside class="notes">Offer live demo: springdocker explain + analyze on one scenario CSV.</aside>
+  </section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    controls: true,
+    progress: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    width: 1347,
+    height: 840,
+    margin: 0.08,
+    plugins: [RevealHighlight, RevealNotes]
+  });
+</script>
+
+</body>
+</html>

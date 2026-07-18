@@ -1,0 +1,104 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["dockerfile"],
+  "regexManagers": [
+    {
+      "fileMatch": ["(^|/)Dockerfile(\\..*)?$"],
+      "matchStrings": [
+        "FROM --platform=\\$BUILDPLATFORM (?<depName>eclipse-temurin):(?<currentValue>\\d+-jdk)@(?<currentDigest>sha256:[a-f0-9]{64})",
+        "FROM --platform=\\$TARGETPLATFORM (?<depName>eclipse-temurin):(?<currentValue>\\d+-jre)@(?<currentDigest>sha256:[a-f0-9]{64})",
+        "FROM --platform=\\$TARGETPLATFORM (?<depName>gcr\\.io/distroless/base-debian12):(?<currentValue>nonroot)@(?<currentDigest>sha256:[a-f0-9]{64})",
+        "FROM --platform=\\$TARGETPLATFORM (?<depName>gcr\\.io/distroless/base-debian13):(?<currentValue>nonroot)@(?<currentDigest>sha256:[a-f0-9]{64})",
+        "FROM --platform=\\$TARGETPLATFORM (?<depName>gcr\\.io/distroless/java\\d+-debian12):(?<currentValue>nonroot)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "description": "Temurin JDK digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"temurin-jdk-(?<currentValue>\\d+)\", \"registry-1.docker.io\", \"library/eclipse-temurin\", \"\\d+-jdk\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "eclipse-temurin",
+      "currentValueTemplate": "{{currentValue}}-jdk"
+    },
+    {
+      "description": "Temurin JRE digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"temurin-jre-(?<currentValue>\\d+)\", \"registry-1.docker.io\", \"library/eclipse-temurin\", \"\\d+-jre\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "eclipse-temurin",
+      "currentValueTemplate": "{{currentValue}}-jre"
+    },
+    {
+      "description": "Distroless Java digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"distroless-java-(?<currentValue>\\d+)\", \"gcr.io\", \"distroless/java\\d+-debian12\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "gcr.io/distroless/java{{currentValue}}-debian12",
+      "currentValueTemplate": "nonroot"
+    },
+    {
+      "description": "Distroless base debian12 digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"distroless-base-debian12\", \"gcr.io\", \"distroless/base-debian12\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "gcr.io/distroless/base-debian12",
+      "currentValueTemplate": "nonroot"
+    },
+    {
+      "description": "Distroless base debian13 digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"distroless-base-debian13\", \"gcr.io\", \"distroless/base-debian13\", \"nonroot\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "gcr.io/distroless/base-debian13",
+      "currentValueTemplate": "nonroot"
+    },
+    {
+      "description": "Debian slim digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"debian-bookworm-slim\", \"registry-1.docker.io\", \"library/debian\", \"bookworm-slim\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "debian",
+      "currentValueTemplate": "bookworm-slim"
+    },
+    {
+      "description": "Ubuntu noble digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"ubuntu-noble\", \"registry-1.docker.io\", \"library/ubuntu\", \"24.04\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ubuntu",
+      "currentValueTemplate": "24.04"
+    },
+    {
+      "description": "Alpine digests in digest_pins.py",
+      "fileMatch": ["^src/springdocker/digest_pins\\.py$"],
+      "matchStrings": [
+        "ImagePin\\(\"alpine-3-21\", \"registry-1.docker.io\", \"library/alpine\", \"3.21\", \"(?<currentDigest>sha256:[a-f0-9]{64})\"\\)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "alpine",
+      "currentValueTemplate": "3.21"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["regex"],
+      "groupName": "base-image-digests"
+    }
+  ]
+}

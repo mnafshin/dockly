@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "springdocker"
+version = "1.2.0"
+description = "CLI for Spring Boot Dockerfile and benchmark workflows (Maven/Gradle)."
+readme = "cli/README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "tomli>=2.0; python_version < '3.11'",
+  "jinja2>=3.1"
+]
+authors = [
+  { name = "springdocker contributors" }
+]
+license = { file = "LICENSE" }
+
+[project.optional-dependencies]
+benchmark = ["requests>=2.32"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.6.0", "mypy>=1.10", "types-Jinja2", "requests>=2.32"]
+
+[project.urls]
+Homepage = "https://github.com/mnafshin/springdocker"
+Source = "https://github.com/mnafshin/springdocker"
+Issues = "https://github.com/mnafshin/springdocker/issues"
+
+[project.scripts]
+springdocker = "springdocker.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+springdocker = ["templates/*.j2", "templates/*.yml.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+addopts = "-q --cov=springdocker --cov-report=term-missing --cov-fail-under=80"  # matches README coverage badge (#76)
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# F/I: pyflakes + isort; B: bugbear; UP: pyupgrade; SIM: simplify (see #84)
+select = ["F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+pretty = true
+show_error_codes = true
+warn_unused_ignores = true
+no_implicit_optional = true
+ignore_missing_imports = true
+
+# Phase 1 strict modules — see docs/internal/typing.md (#90)
+[[tool.mypy.overrides]]
+module = [
+    "springdocker.errors",
+    "springdocker.digest_pins",
+    "springdocker.dockerfile_explain",
+    "springdocker.compare",
+    "springdocker.config_audit",
+    "springdocker.runtime_images",
+    "springdocker.services.verify_service",
+    "springdocker.services.project_service",
+    "springdocker.services.dockerfile_service",
+    "springdocker.services.benchmark_service",
+    "springdocker.regression",
+]
+disallow_untyped_defs = true
+warn_return_any = true
+
+[tool.pyright]
+include = ["src", "tests"]
+extraPaths = ["src"]
+pythonVersion = "3.10"

@@ -1,0 +1,293 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check src tests
+
+  benchmark-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned java-spring-docker-sample
+        run: python scripts/checkout_sample.py --force-remote
+
+      - name: Generate benchmark assets
+        run: |
+          springdocker benchmark generate \
+            --project-root samples/java-spring-docker \
+            --java-version 25
+
+      - name: Assert generated assets stay untracked in sample repo
+        run: |
+          if [ -n "$(git -C samples/java-spring-docker status --porcelain benchmarks/)" ]; then
+            echo "Generated benchmark files would be committed; update sample .gitignore or stop tracking them:"
+            git -C samples/java-spring-docker status --porcelain benchmarks/
+            exit 1
+          fi
+
+      - name: Verify generated layout exists
+        run: |
+          test -f samples/java-spring-docker/benchmarks/01-custom-jre-jlink/variants/with-jlink-runtime/Dockerfile
+          test -f samples/java-spring-docker/benchmarks/04-native-benchmark/Dockerfile
+          test -f samples/java-spring-docker/benchmarks/04-native-benchmark/README.md
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Type check
+        run: mypy
+
+  digest-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package (editable)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Verify pinned base image digests resolve
+        run: python scripts/verify_digest_pins.py
+
+  benchmark-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned java-spring-docker-sample
+        run: python scripts/checkout_sample.py --force-remote
+
+      # Source of truth: sample repo raw.csv + baseline.json (see baseline.manifest.json).
+      # CI does not run Docker benchmarks here — it checks analyzer output stays aligned.
+      - name: Verify baseline.json matches pinned raw.csv
+        run: |
+          springdocker benchmark analyze \
+            --project-root samples/java-spring-docker \
+            benchmarks/03-base-image-choice/results/raw.csv \
+            --format json \
+            --output /tmp/current-summary.json
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          results = Path("samples/java-spring-docker/benchmarks/03-base-image-choice/results")
+          baseline = json.loads(results.joinpath("baseline.json").read_text(encoding="utf-8"))
+          current = json.loads(Path("/tmp/current-summary.json").read_text(encoding="utf-8"))
+          if baseline != current:
+              print("baseline.json is out of sync with raw.csv.")
+              print("Regenerate in java-spring-docker-sample with the command in baseline.manifest.json, then bump the sample pin.")
+              sys.exit(1)
+          PY
+
+      - name: Benchmark regression gate
+        run: |
+          springdocker benchmark analyze \
+            --project-root samples/java-spring-docker \
+            benchmarks/03-base-image-choice/results/raw.csv \
+            --baseline benchmarks/03-base-image-choice/results/baseline.json \
+            --fail-on-regression-above 20
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.10"
+            suite: unit
+          - os: ubuntu-latest
+            python-version: "3.10"
+            suite: integration
+          - os: ubuntu-latest
+            python-version: "3.10"
+            suite: e2e
+          - os: ubuntu-latest
+            python-version: "3.10"
+            suite: benchmark
+          - os: ubuntu-latest
+            python-version: "3.12"
+            suite: unit
+          - os: ubuntu-latest
+            python-version: "3.12"
+            suite: integration
+          - os: ubuntu-latest
+            python-version: "3.12"
+            suite: e2e
+          - os: ubuntu-latest
+            python-version: "3.12"
+            suite: benchmark
+          - os: macos-latest
+            python-version: "3.12"
+            suite: unit
+          - os: windows-latest
+            python-version: "3.12"
+            suite: unit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned java-spring-docker-sample
+        if: matrix.suite == 'benchmark'
+        run: python scripts/checkout_sample.py --force-remote
+
+      # Partial suites cannot satisfy the global coverage gate; coverage is enforced in the coverage job.
+      - name: Test ${{ matrix.suite }}
+        run: pytest tests/${{ matrix.suite }} --cov-fail-under=0
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned java-spring-docker-sample
+        run: python scripts/checkout_sample.py --force-remote
+
+      # Same gate as local `pytest` (see pyproject.toml addopts: 80% on springdocker).
+      - name: Enforce package coverage gate
+        run: pytest
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned java-spring-docker-sample
+        run: python scripts/checkout_sample.py --force-remote
+
+      # Real Docker daemon proof: generate Dockerfile for the reference sample, build, and probe readiness.
+      # Mocked integration/e2e tests stay fast; this job aligns CI with runtime evidence.
+      - name: Docker smoke build and readiness probe
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: python scripts/docker_smoke_build.py
+
+  supply-chain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-spdx
+          path: sbom.spdx.json
+
+      - name: Vulnerability scan (CRITICAL, blocking)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          vuln-type: os,library
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
