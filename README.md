@@ -32,7 +32,7 @@ Already onboarded? `dockly setup --ci-only`. Interactive profiles: `dockly setup
 ```xml
 <plugin>
   <groupId>io.github.mnafshin</groupId>
-  <artifactId>springdocker-maven-plugin</artifactId>
+  <artifactId>dockly-maven-plugin</artifactId>
   <version>1.3.0-SNAPSHOT</version>
 </plugin>
 ```
@@ -101,10 +101,12 @@ Resolved in [#97](https://github.com/mnafshin/dockly/issues/97) — see [`docs/a
 | GitHub repository | [`mnafshin/dockly`](https://github.com/mnafshin/dockly) |
 | PyPI package / `pip install` | `dockly` |
 | CLI command | `dockly` |
-| Config file | `.dockly.toml` (legacy `.springdocker.toml` still loaded if present) |
+| Config file | `.dockly.toml` (legacy `.dockly.toml` still loaded if present) |
 | Env vars | `DOCKLY_*` (legacy `SPRINGDOCKER_*` still honored) |
+| Maven plugin | `io.github.mnafshin:dockly-maven-plugin` / `mvn dockly:*` |
+| Gradle plugin | `io.github.mnafshin.dockly` / `dockly { }` / `docklyGenerate` |
 
-Java builder plugins still use `springdocker-*` coordinates until [#4](https://github.com/mnafshin/dockly/issues/4). Broader migration/shim policy: [#9](https://github.com/mnafshin/dockly/issues/9).
+Broader springdocker compatibility/shim policy: [#9](https://github.com/mnafshin/dockly/issues/9).
 
 The string **`java-spring-docker`** appears in the separate benchmark sample app, not in the CLI package:
 

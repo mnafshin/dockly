@@ -1,4 +1,4 @@
-package io.github.mnafshin.springdocker.maven;
+package io.github.mnafshin.dockly.maven;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Optional bridge: write {@code .springdocker.toml} from plugin configuration (POM → toml only).
+ * Optional bridge: write {@code .dockly.toml} from plugin configuration (POM → toml only).
  */
 @Mojo(name = "export-config", requiresProject = true, threadSafe = true)
 public class ExportConfigMojo extends AbstractMojo {
@@ -20,40 +20,40 @@ public class ExportConfigMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
-    @Parameter(property = "springdocker.javaVersion", defaultValue = "17")
+    @Parameter(property = "dockly.javaVersion", defaultValue = "17")
     private int javaVersion;
 
-    @Parameter(property = "springdocker.runtimeImage", defaultValue = "distroless")
+    @Parameter(property = "dockly.runtimeImage", defaultValue = "distroless")
     private String runtimeImage;
 
-    @Parameter(property = "springdocker.useJlink", defaultValue = "true")
+    @Parameter(property = "dockly.useJlink", defaultValue = "true")
     private boolean useJlink;
 
-    @Parameter(property = "springdocker.useLayeredJar", defaultValue = "true")
+    @Parameter(property = "dockly.useLayeredJar", defaultValue = "true")
     private boolean useLayeredJar;
 
-    @Parameter(property = "springdocker.nonRoot", defaultValue = "true")
+    @Parameter(property = "dockly.nonRoot", defaultValue = "true")
     private boolean nonRoot;
 
-    @Parameter(property = "springdocker.recipe", defaultValue = "jvm-balanced")
+    @Parameter(property = "dockly.recipe", defaultValue = "jvm-balanced")
     private String recipe;
 
-    @Parameter(property = "springdocker.output", defaultValue = "Dockerfile.generated")
+    @Parameter(property = "dockly.output", defaultValue = "Dockerfile.generated")
     private String output;
 
-    @Parameter(property = "springdocker.configFile", defaultValue = ".springdocker.toml")
+    @Parameter(property = "dockly.configFile", defaultValue = ".dockly.toml")
     private String configFile;
 
-    @Parameter(property = "springdocker.force", defaultValue = "false")
+    @Parameter(property = "dockly.force", defaultValue = "false")
     private boolean force;
 
-    @Parameter(property = "springdocker.skip", defaultValue = "false")
+    @Parameter(property = "dockly.skip", defaultValue = "false")
     private boolean skip;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
-            getLog().info("springdocker:export-config skipped");
+            getLog().info("dockly:export-config skipped");
             return;
         }
 
@@ -69,7 +69,7 @@ public class ExportConfigMojo extends AbstractMojo {
         File destination = new File(project.getBasedir(), configFile);
         if (destination.exists() && !force) {
             throw new MojoFailureException(
-                    "Config already exists: " + destination + " — re-run with -Dspringdocker.force=true to overwrite"
+                    "Config already exists: " + destination + " — re-run with -Ddockly.force=true to overwrite"
             );
         }
 

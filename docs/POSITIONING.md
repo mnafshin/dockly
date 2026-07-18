@@ -22,11 +22,11 @@ Go, Python, and other language strategies — community/later via the Strategy A
 
 `explain` uses static text heuristics — useful for documentation and PR review, not a security or correctness audit. `verify` runs tool-backed and config checks with pass/fail semantics; use it to block merges. See [cli/README.md](../cli/README.md#explain-command).
 
-This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**. Install surfaces use **dockly** ([#3](https://github.com/mnafshin/dockly/issues/3)); legacy `.springdocker.toml` / `SPRINGDOCKER_*` remain accepted during the deprecation window ([#9](https://github.com/mnafshin/dockly/issues/9)).
+This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**. Install surfaces use **dockly** ([#3](https://github.com/mnafshin/dockly/issues/3)); legacy `.dockly.toml` / `SPRINGDOCKER_*` remain accepted during the deprecation window ([#9](https://github.com/mnafshin/dockly/issues/9)).
 
 ## Target audience
 
-Resolved in [ADR 0008](adr/0008-target-audience.md) (audience decision from the springdocker era; product name is now **dockly** per [ADR 0011](adr/0011-dockly-product-vision.md)).
+Resolved in [ADR 0008](adr/0008-target-audience.md) (audience decision from the dockly era; product name is now **dockly** per [ADR 0011](adr/0011-dockly-product-vision.md)).
 
 **Primary: production teams** adopting Java / Spring Boot containerization with a Dockerfile they own, review in PRs, and verify in CI. Install from PyPI; run against your service; use Java 17+ and your Spring Boot version via config.
 
@@ -45,7 +45,7 @@ The benchmark sample uses bleeding-edge versions to exercise generator output an
 | Path | Use when |
 |---|---|
 | `pip install dockly` / `pipx` / `uv tool` | Full toolkit — Dockerfile, explain, verify, benchmarks; `.dockly.toml` SSOT ([ADR 0005](adr/0005-config-first-dockerfile-generation.md)) |
-| Maven plugin `io.github.mnafshin:springdocker-maven-plugin` | Java-only builder — generate/verify from `pom.xml`; no Python ([ADR 0010](adr/0010-pom-gradle-ssot-java-builder.md); coordinates rebrand in [#4](https://github.com/mnafshin/dockly/issues/4)) |
+| Maven plugin `io.github.mnafshin:dockly-maven-plugin` | Java-only builder — generate/verify from `pom.xml`; no Python ([ADR 0010](adr/0010-pom-gradle-ssot-java-builder.md)) |
 | Clone + `python scripts/checkout_sample.py` | Reproduce benchmark scenarios, reference CSVs, presentation numbers ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample)) |
 | Clone + editable install | CLI development ([CONTRIBUTING.md](../CONTRIBUTING.md)) |
 

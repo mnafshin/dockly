@@ -1,4 +1,4 @@
-package io.github.mnafshin.springdocker.maven;
+package io.github.mnafshin.dockly.maven;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

@@ -50,6 +50,15 @@ A transitional **CLI-wrapper** Maven plugin (Mojo → `dockly` subprocess) was p
 - Publish to Maven Central for easy adoption ([#145](https://github.com/mnafshin/dockly/issues/145)); Gradle twin later ([#146](https://github.com/mnafshin/dockly/issues/146)).
 - Dual front-ends to similar generation logic are accepted if the plugin stays a **thin, opinionated subset** of CLI capabilities.
 
+## Coordinates (dockly)
+
+| Surface | Value |
+|---|---|
+| Maven | `io.github.mnafshin:dockly-maven-plugin` · goals `dockly:generate` / `dockly:verify` / `dockly:export-config` |
+| Gradle | plugin id `io.github.mnafshin.dockly` · extension `dockly { }` · tasks `docklyGenerate` / `docklyVerify` |
+
+Renamed from `springdocker-*` in [#4](https://github.com/mnafshin/dockly/issues/4). SSOT rules above are unchanged.
+
 ## References
 
 - Milestone: https://github.com/mnafshin/dockly/milestone/3

@@ -93,7 +93,7 @@ PyPI-style install (no editable checkout):
 ```bash
 pipx install dockly
 export DOCKER_BUILDKIT=1
-python scripts/consumer_smoke_petclinic.py --springdocker-cmd dockly
+python scripts/consumer_smoke_petclinic.py --dockly-cmd dockly
 ```
 
 Useful flags while iterating:

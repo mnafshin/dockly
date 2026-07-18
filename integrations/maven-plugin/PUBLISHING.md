@@ -1,4 +1,4 @@
-# Publishing springdocker-maven-plugin to Maven Central
+# Publishing dockly-maven-plugin to Maven Central
 
 Tracked by [#145](https://github.com/mnafshin/dockly/issues/145).
 
@@ -7,7 +7,7 @@ Tracked by [#145](https://github.com/mnafshin/dockly/issues/145).
 | Field | Value |
 |---|---|
 | GroupId | `io.github.mnafshin` |
-| ArtifactId | `springdocker-maven-plugin` |
+| ArtifactId | `dockly-maven-plugin` |
 | Packaging | `maven-plugin` |
 
 Versioning is **independent of the PyPI CLI** (plugin `1.3.x` vs CLI `1.2.x` is fine). Document the plugin version in release notes when cutting a GitHub Release.
@@ -38,7 +38,7 @@ After Central sync (often minutes to hours), consumers use a non-SNAPSHOT versio
 ```xml
 <plugin>
   <groupId>io.github.mnafshin</groupId>
-  <artifactId>springdocker-maven-plugin</artifactId>
+  <artifactId>dockly-maven-plugin</artifactId>
   <version>1.3.0</version>
 </plugin>
 ```

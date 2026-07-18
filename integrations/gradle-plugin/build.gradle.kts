@@ -39,10 +39,10 @@ sourceSets {
 
 gradlePlugin {
     plugins {
-        create("springdocker") {
-            id = "io.github.mnafshin.springdocker"
-            implementationClass = "io.github.mnafshin.springdocker.gradle.SpringdockerPlugin"
-            displayName = "springdocker"
+        create("dockly") {
+            id = "io.github.mnafshin.dockly"
+            implementationClass = "io.github.mnafshin.dockly.gradle.DocklyPlugin"
+            displayName = "dockly"
             description = "Generate and verify Spring Boot Dockerfiles from build.gradle (SSOT; no Python)"
         }
     }

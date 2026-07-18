@@ -1,8 +1,8 @@
-package io.github.mnafshin.springdocker.gradle;
+package io.github.mnafshin.dockly.gradle;
 
-import io.github.mnafshin.springdocker.maven.DockerfileDriftChecker;
-import io.github.mnafshin.springdocker.maven.DockerfileRenderer;
-import io.github.mnafshin.springdocker.maven.PluginDockerfileOptions;
+import io.github.mnafshin.dockly.maven.DockerfileDriftChecker;
+import io.github.mnafshin.dockly.maven.DockerfileRenderer;
+import io.github.mnafshin.dockly.maven.PluginDockerfileOptions;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,7 +17,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 
-/** Fails when the Dockerfile drifts from the {@code springdocker} extension (build.gradle SSOT). */
+/** Fails when the Dockerfile drifts from the {@code dockly} extension (build.gradle SSOT). */
 public abstract class VerifyDockerfileTask extends DefaultTask {
 
     @Inject
@@ -61,7 +61,7 @@ public abstract class VerifyDockerfileTask extends DefaultTask {
         );
         Path dockerfile = getProjectDirectory().get().getAsFile().toPath().resolve(options.output());
         if (!Files.isRegularFile(dockerfile)) {
-            throw new GradleException("Missing " + dockerfile + " — run springdockerGenerate first");
+            throw new GradleException("Missing " + dockerfile + " — run docklyGenerate first");
         }
         String actual = Files.readString(dockerfile, StandardCharsets.UTF_8);
         List<String> drift = DockerfileDriftChecker.findDrift(actual, options);
@@ -69,11 +69,11 @@ public abstract class VerifyDockerfileTask extends DefaultTask {
         if (!DockerfileDriftChecker.normalize(actual).equals(DockerfileDriftChecker.normalize(expected))
                 || !drift.isEmpty()) {
             throw new GradleException(
-                    "Dockerfile drift vs springdocker {} extension (build.gradle SSOT). "
-                            + "Re-run springdockerGenerate. Details: "
+                    "Dockerfile drift vs dockly {} extension (build.gradle SSOT). "
+                            + "Re-run docklyGenerate. Details: "
                             + drift
             );
         }
-        getLogger().lifecycle("springdockerVerify OK — matches build.gradle extension");
+        getLogger().lifecycle("docklyVerify OK — matches build.gradle extension");
     }
 }

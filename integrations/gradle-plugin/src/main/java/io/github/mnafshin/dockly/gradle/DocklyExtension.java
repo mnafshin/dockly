@@ -1,10 +1,10 @@
-package io.github.mnafshin.springdocker.gradle;
+package io.github.mnafshin.dockly.gradle;
 
-import io.github.mnafshin.springdocker.maven.PluginDockerfileOptions;
+import io.github.mnafshin.dockly.maven.PluginDockerfileOptions;
 import org.gradle.api.provider.Property;
 
-/** Extension block {@code springdocker { ... }} — build.gradle SSOT. */
-public abstract class SpringdockerExtension {
+/** Extension block {@code dockly { ... }} — build.gradle SSOT. */
+public abstract class DocklyExtension {
 
     public abstract Property<Integer> getJavaVersion();
 

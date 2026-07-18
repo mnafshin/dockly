@@ -15,7 +15,7 @@ pluginManagement {
 }
 
 plugins {
-    id("io.github.mnafshin.springdocker") version "1.3.0-SNAPSHOT"
+    id("io.github.mnafshin.dockly") version "1.3.0-SNAPSHOT"
 }
 
 dockly {
@@ -33,6 +33,16 @@ dockly {
 ./gradlew docklyGenerate
 ./gradlew docklyVerify
 ```
+
+## Migration from springdocker Gradle plugin
+
+| Before | After |
+|---|---|
+| Plugin id `io.github.mnafshin.springdocker` | `io.github.mnafshin.dockly` |
+| Extension `springdocker { }` | `dockly { }` |
+| Tasks `springdockerGenerate` / `springdockerVerify` | `docklyGenerate` / `docklyVerify` |
+
+Extension property names are unchanged. ADR 0010 SSOT rules are unchanged: generate/verify still require neither Python nor `.dockly.toml`.
 
 ## Develop
 

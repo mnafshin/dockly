@@ -1,1 +1,1 @@
-rootProject.name = "springdocker-gradle-plugin"
+rootProject.name = "dockly-gradle-plugin"

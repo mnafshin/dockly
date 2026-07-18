@@ -1,4 +1,4 @@
-package io.github.mnafshin.springdocker.maven;
+package io.github.mnafshin.dockly.maven;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,34 +21,34 @@ public class VerifyMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
-    @Parameter(property = "springdocker.javaVersion", defaultValue = "17")
+    @Parameter(property = "dockly.javaVersion", defaultValue = "17")
     private int javaVersion;
 
-    @Parameter(property = "springdocker.runtimeImage", defaultValue = "distroless")
+    @Parameter(property = "dockly.runtimeImage", defaultValue = "distroless")
     private String runtimeImage;
 
-    @Parameter(property = "springdocker.useJlink", defaultValue = "true")
+    @Parameter(property = "dockly.useJlink", defaultValue = "true")
     private boolean useJlink;
 
-    @Parameter(property = "springdocker.useLayeredJar", defaultValue = "true")
+    @Parameter(property = "dockly.useLayeredJar", defaultValue = "true")
     private boolean useLayeredJar;
 
-    @Parameter(property = "springdocker.nonRoot", defaultValue = "true")
+    @Parameter(property = "dockly.nonRoot", defaultValue = "true")
     private boolean nonRoot;
 
-    @Parameter(property = "springdocker.recipe", defaultValue = "jvm-balanced")
+    @Parameter(property = "dockly.recipe", defaultValue = "jvm-balanced")
     private String recipe;
 
-    @Parameter(property = "springdocker.output", defaultValue = "Dockerfile.generated")
+    @Parameter(property = "dockly.output", defaultValue = "Dockerfile.generated")
     private String output;
 
-    @Parameter(property = "springdocker.skip", defaultValue = "false")
+    @Parameter(property = "dockly.skip", defaultValue = "false")
     private boolean skip;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
-            getLog().info("springdocker:verify skipped (springdocker.skip=true)");
+            getLog().info("dockly:verify skipped (dockly.skip=true)");
             return;
         }
 
@@ -64,7 +64,7 @@ public class VerifyMojo extends AbstractMojo {
         File dockerfile = new File(project.getBasedir(), options.output());
         if (!dockerfile.isFile()) {
             throw new MojoFailureException(
-                    "Missing Dockerfile: " + dockerfile + " — run mvn springdocker:generate first"
+                    "Missing Dockerfile: " + dockerfile + " — run mvn dockly:generate first"
             );
         }
 
@@ -79,12 +79,12 @@ public class VerifyMojo extends AbstractMojo {
         if (!normalize(actual).equals(normalize(expected))) {
             throw new MojoFailureException(
                     "Dockerfile drift detected vs plugin configuration (POM SSOT). "
-                            + "Re-run mvn springdocker:generate and commit "
+                            + "Re-run mvn dockly:generate and commit "
                             + options.output()
-                            + ". (CLI verify --check-config-drift uses .springdocker.toml instead.)"
+                            + ". (CLI verify --check-config-drift uses .dockly.toml instead.)"
             );
         }
-        getLog().info("springdocker:verify OK — " + options.output() + " matches plugin configuration");
+        getLog().info("dockly:verify OK — " + options.output() + " matches plugin configuration");
     }
 
     static String normalize(String text) {

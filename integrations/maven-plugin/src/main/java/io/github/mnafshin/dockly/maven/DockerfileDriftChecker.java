@@ -1,4 +1,4 @@
-package io.github.mnafshin.springdocker.maven;
+package io.github.mnafshin.dockly.maven;
 
 import java.util.ArrayList;
 import java.util.List;

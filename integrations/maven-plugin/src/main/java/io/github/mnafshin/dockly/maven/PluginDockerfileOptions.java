@@ -1,11 +1,11 @@
-package io.github.mnafshin.springdocker.maven;
+package io.github.mnafshin.dockly.maven;
 
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
 /**
- * Plugin-native Dockerfile options (POM SSOT). Never loaded from {@code .springdocker.toml}.
+ * Plugin-native Dockerfile options (POM SSOT). Never loaded from {@code .dockly.toml}.
  *
  * <p>Schema for milestone issue #141; used by generate/verify/export goals.
  */

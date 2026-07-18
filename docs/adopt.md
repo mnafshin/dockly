@@ -58,7 +58,7 @@ cd integrations/maven-plugin && mvn clean install   # until Central publish
 ```xml
 <plugin>
   <groupId>io.github.mnafshin</groupId>
-  <artifactId>springdocker-maven-plugin</artifactId>
+  <artifactId>dockly-maven-plugin</artifactId>
   <version>1.3.0-SNAPSHOT</version>
   <configuration>
     <javaVersion>21</javaVersion>
@@ -79,7 +79,7 @@ cd integrations/maven-plugin && mvn clean install   # until Central publish
 mvn dockly:generate
 mvn dockly:verify
 # optional bridge to CLI:
-mvn dockly:export-config -Dspringdocker.force=true
+mvn dockly:export-config -Ddockly.force=true
 ```
 
 Details: [`integrations/maven-plugin/README.md`](../integrations/maven-plugin/README.md).

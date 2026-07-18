@@ -1,7 +1,7 @@
-package io.github.mnafshin.springdocker.gradle;
+package io.github.mnafshin.dockly.gradle;
 
-import io.github.mnafshin.springdocker.maven.DockerfileRenderer;
-import io.github.mnafshin.springdocker.maven.PluginDockerfileOptions;
+import io.github.mnafshin.dockly.maven.DockerfileRenderer;
+import io.github.mnafshin.dockly.maven.PluginDockerfileOptions;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,7 +16,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-/** Writes a Dockerfile from the {@code springdocker} extension (no Python). */
+/** Writes a Dockerfile from the {@code dockly} extension (no Python). */
 public abstract class GenerateDockerfileTask extends DefaultTask {
 
     @Inject
