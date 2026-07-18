@@ -19,6 +19,7 @@ from dockly.commands import cmd_setup
 
 class CiWorkflowTests(unittest.TestCase):
     def test_action_uses_ref_major(self) -> None:
+        self.assertEqual(action_uses_ref(package_version="0.1.0"), "mnafshin/dockly/action@v0")
         self.assertEqual(action_uses_ref(package_version="1.2.0"), "mnafshin/dockly/action@v1")
         self.assertEqual(action_uses_ref(package_version="2.0.0"), "mnafshin/dockly/action@v2")
 
@@ -26,16 +27,19 @@ class CiWorkflowTests(unittest.TestCase):
         text = render_dockerfile_ssot_workflow(
             dockerfile="Dockerfile.generated",
             build_tool="maven",
-            dockly_version="1.2.0",
+            dockly_version="0.1.0",
         )
-        self.assertIn("mnafshin/dockly/action@v1", text)
-        self.assertIn('dockly-version: "1.2.0"', text)
+        self.assertIn("mnafshin/dockly/action@v0", text)
+        self.assertIn('dockly-version: "0.1.0"', text)
         self.assertIn("build-tool: maven", text)
         self.assertIn("Dockerfile.generated", text)
 
     def test_render_omits_version_pin_by_default(self) -> None:
+        from dockly import __version__
+
         text = render_dockerfile_ssot_workflow(dockerfile="Dockerfile.generated")
-        self.assertIn("mnafshin/dockly/action@v1", text)
+        major = __version__.split(".", 1)[0]
+        self.assertIn(f"mnafshin/dockly/action@v{major}", text)
         self.assertNotIn("dockly-version:", text)
 
     def test_write_workflow_creates_file(self) -> None:

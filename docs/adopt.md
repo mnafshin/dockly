@@ -59,7 +59,7 @@ cd integrations/maven-plugin && mvn clean install   # until Central publish
 <plugin>
   <groupId>io.github.mnafshin</groupId>
   <artifactId>dockly-maven-plugin</artifactId>
-  <version>1.3.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <configuration>
     <javaVersion>21</javaVersion>
     <runtimeImage>temurin</runtimeImage>
@@ -123,11 +123,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mnafshin/dockly/action@v1
+      - uses: mnafshin/dockly/action@v0
         with:
           project-root: .
           dockerfile: Dockerfile.generated
-          # optional: dockly-version: "1.2.0"
+          # optional: dockly-version: "0.1.0"
 ```
 
 Action docs: [`action/README.md`](../action/README.md).

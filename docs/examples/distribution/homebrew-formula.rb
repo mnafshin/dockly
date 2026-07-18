@@ -1,7 +1,7 @@
 class Springdocker < Formula
   desc "Spring Boot Dockerfile and benchmark workflow CLI"
   homepage "https://github.com/mnafshin/dockly"
-  url "https://github.com/mnafshin/dockly/archive/refs/tags/v1.2.0.tar.gz"
+  url "https://github.com/mnafshin/dockly/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "REPLACE_WITH_TARBALL_SHA256"
   license "Apache-2.0"
 

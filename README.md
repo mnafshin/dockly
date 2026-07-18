@@ -33,7 +33,7 @@ Already onboarded? `dockly setup --ci-only`. Interactive profiles: `dockly setup
 <plugin>
   <groupId>io.github.mnafshin</groupId>
   <artifactId>dockly-maven-plugin</artifactId>
-  <version>1.3.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
 </plugin>
 ```
 

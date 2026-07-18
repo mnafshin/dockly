@@ -39,7 +39,7 @@ After Central sync (often minutes to hours), consumers use a non-SNAPSHOT versio
 <plugin>
   <groupId>io.github.mnafshin</groupId>
   <artifactId>dockly-maven-plugin</artifactId>
-  <version>1.3.0</version>
+  <version>0.1.0</version>
 </plugin>
 ```
 

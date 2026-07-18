@@ -15,7 +15,7 @@ pluginManagement {
 }
 
 plugins {
-    id("io.github.mnafshin.dockly") version "1.3.0-SNAPSHOT"
+    id("io.github.mnafshin.dockly") version "0.1.0-SNAPSHOT"
 }
 
 dockly {

@@ -48,7 +48,7 @@ Implied facts (do not re-ask): `language=java`, `build_tool=maven`. Details: [`d
 <plugin>
   <groupId>io.github.mnafshin</groupId>
   <artifactId>dockly-maven-plugin</artifactId>
-  <version>1.3.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   <configuration>
     <javaVersion>21</javaVersion>
     <runtimeImage>temurin</runtimeImage>

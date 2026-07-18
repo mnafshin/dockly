@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.mnafshin"
-version = "1.3.0-SNAPSHOT"
+version = "0.1.0-SNAPSHOT"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17

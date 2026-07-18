@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mnafshin/dockly/action@v1
+      - uses: mnafshin/dockly/action@v0
         with:
           project-root: .
           dockerfile: Dockerfile.generated
           # Optional: pin the CLI version (setup --ci does this automatically)
-          # dockly-version: "1.2.0"
+          # dockly-version: "0.1.0"
 ```
 
 Or generate this workflow locally:
@@ -47,10 +47,10 @@ Generated workflows install the latest PyPI `dockly` by default. Add `dockly-ver
 Reference this Action by path (works on any tagged release of this repository):
 
 ```text
-mnafshin/dockly/action@v1
-mnafshin/dockly/action@v1.2.0
+mnafshin/dockly/action@v0
+mnafshin/dockly/action@v0.1.0
 ```
 
-Publish a GitHub Release that includes this `action/` directory. Keep a moving `v1` major tag for consumers. Full marketplace listing can use the same release; the Action metadata lives in `action/action.yml` (path-based `uses:`).
+Publish a GitHub Release that includes this `action/` directory. Keep a moving `v0` major tag for consumers while on the 0.x line. Full marketplace listing can use the same release; the Action metadata lives in `action/action.yml` (path-based `uses:`).
 
 Requires committed `.dockly.toml` and (when `include_embedded_sbom = true`) an `sbom.spdx.json` in the consumer repository. See [docs/adopt.md](../docs/adopt.md).
