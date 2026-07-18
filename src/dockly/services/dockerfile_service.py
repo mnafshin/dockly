@@ -267,8 +267,10 @@ def explain_dockerfile(
     path = resolve_path(project_root, dockerfile_path)
     if not path.exists():
         raise ValueError(f"missing Dockerfile: {path}")
-    payload = dict(explain_dockerfile_text(path.read_text(encoding="utf-8")))
+    text = path.read_text(encoding="utf-8")
+    payload = dict(explain_dockerfile_text(text))
     payload["path"] = str(path)
+    payload["capability_path"] = _capability_path_payload(project_root, text, build_tool)
     if not config_aware:
         return payload
 
@@ -296,3 +298,54 @@ def explain_dockerfile(
 
     payload["config_aware"] = build_config_aware_payload(audit)
     return payload
+
+
+def _capability_path_payload(
+    project_root: Path,
+    dockerfile_text: str,
+    build_tool: str | None,
+) -> dict[str, object]:
+    """Describe which capability-gated path was selected and why."""
+    from ..project_facts import detect_project_facts
+    from ..strategy import Policy, select_strategy
+
+    layered_in_df = ("jarmode=layertools" in dockerfile_text) or (
+        "extract --layers" in dockerfile_text and "/layers/" in dockerfile_text
+    )
+    try:
+        facts = detect_project_facts(project_root, build_tool)
+    except ValueError as exc:
+        return {
+            "strategy_id": None,
+            "name": None,
+            "rationale": f"project facts unavailable: {exc}",
+            "dockerfile_has_layered_jar": layered_in_df,
+            "path": "unknown",
+        }
+
+    if facts.framework.value == "spring-boot":
+        if layered_in_df:
+            policy = Policy(force_layered_jar=True)
+        elif not facts.capabilities.layered_jar.value:
+            policy = Policy(force_layered_jar=False)
+        else:
+            policy = Policy(force_layered_jar=None)
+    else:
+        policy = Policy(force_layered_jar=False)
+
+    plan = select_strategy(facts, policy)
+    if plan.strategy_id == "spring-boot-layered":
+        path_label = "spring-layered"
+    elif plan.strategy_id == "spring-boot-jar":
+        path_label = "spring-non-layered"
+    else:
+        path_label = "plain-java"
+
+    return {
+        "strategy_id": plan.strategy_id,
+        "name": plan.name,
+        "rationale": plan.rationale,
+        "dockerfile_has_layered_jar": layered_in_df,
+        "path": path_label,
+        "optimizations": list(plan.optimizations),
+    }

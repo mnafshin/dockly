@@ -167,6 +167,15 @@ def _render_explain_table(payload: dict[str, object]) -> str:
         f"| Summary | {payload.get('summary', '-')} |",
         f"| Notes | {'; '.join(notes) if notes else '-'} |",
     ]
+    capability_path = payload.get("capability_path")
+    if isinstance(capability_path, dict):
+        lines.extend(
+            [
+                f"| Capability path | {capability_path.get('path', '-')} |",
+                f"| Strategy | {capability_path.get('strategy_id') or '-'} |",
+                f"| Path rationale | {capability_path.get('rationale', '-')} |",
+            ]
+        )
     config_aware = payload.get("config_aware")
     if isinstance(config_aware, dict):
         lines.extend(
