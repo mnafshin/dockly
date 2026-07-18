@@ -1,12 +1,17 @@
-# springdocker
+# dockly
 
-[![CI](https://github.com/mnafshin/springdocker/actions/workflows/ci.yml/badge.svg)](https://github.com/mnafshin/springdocker/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/mnafshin/springdocker)](https://github.com/mnafshin/springdocker/releases/latest)
+[![CI](https://github.com/mnafshin/dockly/actions/workflows/ci.yml/badge.svg)](https://github.com/mnafshin/dockly/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/mnafshin/dockly)](https://github.com/mnafshin/dockly/releases/latest)
 [![Lint](https://img.shields.io/badge/lint-ruff-blue)](https://github.com/astral-sh/ruff)
 [![Coverage](https://img.shields.io/badge/coverage-%3E%3D80%25-brightgreen)](./CONTRIBUTING.md#coverage-policy)
 [![Benchmark](https://img.shields.io/badge/benchmark-regression--gated-orange)](./docs/benchmarks.md)
 
-Developer toolkit for **production teams** containerizing Spring Boot — with optional benchmark evidence for tuning and conference demos.
+**dockly** is a policy-driven Dockerfile generator (detect → policy → generate → explain → verify) with
+**Java + Spring Boot** as first-party strategies. Other languages are community/later — see
+[`docs/adr/0011-dockly-product-vision.md`](docs/adr/0011-dockly-product-vision.md).
+
+Developer toolkit for **production teams** containerizing Java / Spring Boot — with optional benchmark evidence for tuning and conference demos.
+
 
 ## Quick start
 
@@ -43,13 +48,13 @@ No `.springdocker.toml` required. Optional later: `mvn springdocker:export-confi
 
 Team rollout for both surfaces: [`docs/adopt.md`](docs/adopt.md).
 
-`springdocker` is a Python CLI that helps teams inspect a Spring Boot project, commit Dockerfile strategy in `.springdocker.toml`, generate and verify Dockerfiles in CI, and (optionally) run benchmark suites for evidence-backed tuning. The **Maven plugin** is a separate Java-only builder surface for teams that only need generate/verify from `pom.xml`.
+**dockly** (installable today as the `springdocker` package until [#3](https://github.com/mnafshin/dockly/issues/3)) helps teams inspect a Java / Spring Boot project, commit Dockerfile strategy in config, generate and verify Dockerfiles in CI, and (optionally) run benchmark suites for evidence-backed tuning. The **Maven plugin** is a separate Java-only builder surface for teams that only need generate/verify from `pom.xml`.
 
-See [`docs/POSITIONING.md`](docs/POSITIONING.md) for **who it is for**, CI-evidenced guarantees, and how the sample projects relate to shipped behavior.
+See [`docs/POSITIONING.md`](docs/POSITIONING.md) for **who it is for**, core vs strategies, CI-evidenced guarantees, and how the sample projects relate to shipped behavior.
 
 ## Who it's for
 
-Resolved in [#87](https://github.com/mnafshin/springdocker/issues/87) — see [`docs/adr/0008-target-audience.md`](docs/adr/0008-target-audience.md).
+Resolved in [`docs/adr/0008-target-audience.md`](docs/adr/0008-target-audience.md); product identity in [`docs/adr/0011-dockly-product-vision.md`](docs/adr/0011-dockly-product-vision.md).
 
 | Audience | Fit |
 |---|---|
@@ -57,7 +62,8 @@ Resolved in [#87](https://github.com/mnafshin/springdocker/issues/87) — see [`
 | **Conference / storytelling** (secondary) | Clone [`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample) (or `python scripts/checkout_sample.py` from this repo) for presentations and benchmark evidence (**Java 25**) — numbers are sample-specific, not universal guarantees |
 | **Personal lab only** (not primary) | Bleeding-edge sample (Boot 4 / Java 25) stress-tests the generator; you do not need to match those versions to use the CLI |
 
-**Not** a black-box image builder like Jib or Buildpacks — you own the Dockerfile. **Not** a research-only toy — CI gates the installable CLI; benchmarks and decks are optional depth.
+**Not** a black-box image builder like Jib or Buildpacks — you own the Dockerfile. **Not** a research-only toy — CI gates the installable CLI; benchmarks and decks are optional depth. **Not** a first-party polyglot Dockerfile toolkit in v1 — Java/Spring strategies ship here; other languages use the Strategy API ([#6](https://github.com/mnafshin/dockly/issues/6)).
+
 
 ## Install
 
@@ -88,14 +94,15 @@ Resolved in [#97](https://github.com/mnafshin/springdocker/issues/97) — see [`
 
 ## Project naming
 
-**springdocker** is the canonical name for this project — use it when searching GitHub or PyPI, installing the package, or running the CLI.
+**dockly** is the product name — policy-driven Dockerfile generation with Java/Spring first-party strategies ([ADR 0011](docs/adr/0011-dockly-product-vision.md)).
 
-| Surface | Name |
-|---|---|
-| GitHub repository | [`mnafshin/springdocker`](https://github.com/mnafshin/springdocker) |
-| PyPI package / `pip install` | `springdocker` |
-| CLI command | `springdocker` |
-| Config file | `.springdocker.toml` |
+| Surface | Name | Notes |
+|---|---|---|
+| GitHub repository | [`mnafshin/dockly`](https://github.com/mnafshin/dockly) | Canonical |
+| Product / docs | `dockly` | This README and POSITIONING |
+| PyPI / CLI / config / Action / env | Migrating from `springdocker` → `dockly` | Tracked in [#3](https://github.com/mnafshin/dockly/issues/3) |
+
+Until [#3](https://github.com/mnafshin/dockly/issues/3) lands, installable surfaces may still use the legacy `springdocker` names (package, console script, `.springdocker.toml`, `SPRINGDOCKER_*`). Optional compatibility for springdocker users: [#9](https://github.com/mnafshin/dockly/issues/9).
 
 The string **`java-spring-docker`** appears in the separate benchmark sample app, not in the CLI package:
 
@@ -105,12 +112,12 @@ The string **`java-spring-docker`** appears in the separate benchmark sample app
 | Local checkout path | `samples/java-spring-docker/` (gitignored; via `scripts/checkout_sample.py`) | Where CI and docs expect the sample after checkout |
 | Sample Maven/Gradle artifact | `io.github.mnafshin:java-spring-docker` | Demo application identity inside that sample |
 
-Those sample names predate the **springdocker** product name. They do not affect installation (`pip install springdocker`) or CLI usage.
+Those sample names predate the **dockly** product name. They do not affect CLI usage after install.
 
-## Why springdocker instead of Jib or Buildpacks?
+## Why dockly instead of Jib or Buildpacks?
 
 - **Jib** and **Buildpacks** optimize for build convenience and opaque image assembly.
-- **springdocker** optimizes for teams that want a **real Dockerfile they can own, read, and edit**.
+- **dockly** optimizes for teams that want a **real Dockerfile they can own, read, and edit**.
 - It combines explicit Dockerfile generation with explainability and verification workflows.
 - **`explain`** is advisory static analysis for human review; **`verify`** is the pass/fail command for CI gates.
 
@@ -120,19 +127,18 @@ See [`docs/POSITIONING.md`](docs/POSITIONING.md) for the detailed comparison and
 
 ```mermaid
 flowchart LR
-  dev[Developer] --> cli[springdocker CLI]
-  cli --> cfg[.springdocker.toml]
-  cli --> proj[Spring Boot project]
-  cli --> df[Generated Dockerfile]
-  cli --> bench[Benchmark variants + raw CSV]
-  bench --> report[Table / JSON analysis]
+  det[Detect ProjectFacts] --> pol[Policy / profile]
+  pol --> strat[Strategy]
+  strat --> gen[Generated Dockerfile]
+  gen --> explain[explain]
+  gen --> verify[verify]
 ```
 
-See `docs/architecture.md` for the detailed module map and command lifecycle.
+Core owns detect → policy → generate → explain → verify. Strategies own language/framework optimizations. See [`docs/adr/0011-dockly-product-vision.md`](docs/adr/0011-dockly-product-vision.md) and `docs/architecture.md`.
 
 The repo is split into these main surfaces:
 
-- `src/springdocker/` - installable CLI package and core implementation.
+- `src/springdocker/` - installable CLI package (renaming to `dockly` in [#3](https://github.com/mnafshin/dockly/issues/3)).
 - `cli/README.md` - command reference and configuration details.
 
 See [Sample project map](#sample-project-map) for which Spring Boot path to use.

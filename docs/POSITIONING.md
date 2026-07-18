@@ -1,22 +1,36 @@
-# springdocker positioning
+# dockly positioning
 
-`springdocker` targets the middle ground between black-box image builders and fully hand-written Dockerfiles:
+**dockly** is a policy-driven Dockerfile generator: detect project facts → apply policy/profile →
+generate a reviewable Dockerfile → explain → verify. Product vision: [ADR 0011](adr/0011-dockly-product-vision.md).
+
+It targets the middle ground between black-box image builders and fully hand-written Dockerfiles:
 
 - You get a generated Dockerfile with strong defaults.
 - You keep direct ownership of the container definition.
 - You can explain (advisory review) and verify (CI gates) the output.
 
+### Core + strategies
+
+| Layer | Responsibility |
+|---|---|
+| **Core** | Detect → policy/profile → generate → explain → verify |
+| **Strategies** | Language/framework Dockerfile optimizations from detected facts + policy |
+
+**First-party in v1:** Java and Spring Boot (including plain Java JDK paths). **Not first-party in v1:**
+Go, Python, and other language strategies — community/later via the Strategy API
+([#6](https://github.com/mnafshin/dockly/issues/6)). See [ADR 0011 non-goals](adr/0011-dockly-product-vision.md#non-goals-v1).
+
 `explain` uses static text heuristics — useful for documentation and PR review, not a security or correctness audit. `verify` runs tool-backed and config checks with pass/fail semantics; use it to block merges. See [cli/README.md](../cli/README.md#explain-command).
 
-This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**.
+This document separates **what the CLI ships and CI validates** from **what the benchmark sample demonstrates** and **what remains roadmap**. Installable package and CLI surfaces are renaming from `springdocker` → `dockly` ([#3](https://github.com/mnafshin/dockly/issues/3)); until that lands, PyPI/CLI may still use the legacy name.
 
 ## Target audience
 
-Resolved in [#87](https://github.com/mnafshin/springdocker/issues/87) — see [ADR 0008](adr/0008-target-audience.md).
+Resolved in [ADR 0008](adr/0008-target-audience.md) (audience decision from the springdocker era; product name is now **dockly** per [ADR 0011](adr/0011-dockly-product-vision.md)).
 
-**Primary: production teams** adopting Spring Boot containerization with a Dockerfile they own, review in PRs, and verify in CI. Install from PyPI; run against your service; use Java 17+ and your Spring Boot version via config.
+**Primary: production teams** adopting Java / Spring Boot containerization with a Dockerfile they own, review in PRs, and verify in CI. Install from PyPI; run against your service; use Java 17+ and your Spring Boot version via config.
 
-**Secondary: conference and evidence storytelling.** Presentations, benchmark scenarios, and the reference sample (`Spring Boot 4`, `Java 25`) live in this repository to support reproducible talks and tuning evidence. They are optional — not required for production rollout and not claims about every user's stack. Ownership, update cadence, and publish policy: [`docs/presentation/README.md`](../presentation/README.md).
+**Secondary: conference and evidence storytelling.** Presentations, benchmark scenarios, and the reference sample (`Spring Boot 4`, `Java 25`) live in this repository to support reproducible talks and tuning evidence. They are optional — not required for production rollout and not claims about every user's stack. Ownership, update cadence, and publish policy: [`docs/presentation/README.md`](presentation/README.md).
 
 **Not primary: lab-only research tooling.** Stress-testing happens in-repo; the shipped CLI is general-purpose for real projects.
 
@@ -41,17 +55,19 @@ The reference sample is a separate repository, pinned from this one. See [ADR 00
 
 ## Product scope
 
-springdocker is a **general-purpose CLI** for Maven and Gradle Spring Boot projects:
+dockly is a **policy-driven Dockerfile generator** with a language-agnostic core. **Java + Spring Boot**
+are first-party strategies; other languages are community/later ([ADR 0011](adr/0011-dockly-product-vision.md)).
 
-| In scope today | Out of scope today |
+| In scope today | Out of scope today (v1 non-goals) |
 |---|---|
-| Project detection, config, Dockerfile generation | Replacing your CI platform or registry |
+| Project detection, config, Dockerfile generation | First-party Go / Python / Node strategies |
 | `explain` — advisory static analysis for human review | Using `explain` as a security or correctness CI gate |
 | `verify` — pass/fail checks for CI (config SSOT, optional hadolint/trivy/…) | Guaranteed native-image production workflow |
 | Optional benchmark asset generation, run, and analyze | Universal JVM tuning prescriptions for every workload |
 | Plugin hooks for recipes, mutators, and verifiers | Full compatibility matrix across all Spring Boot versions |
+| Strategy API for contributors ([#6](https://github.com/mnafshin/dockly/issues/6)) | Replacing your CI platform or registry |
 
-The CLI supports **Java 17+** on any Maven/Gradle Spring Boot project. When `java_version` is omitted, springdocker prefers the **detected** project Java, then falls back to **17**. The **reference sample** ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample)) stays on Spring Boot 4 / Java 25 to drive benchmark evidence and presentation numbers — that is not a claim that every user must run Java 25.
+The CLI supports **Java 17+** on Maven/Gradle projects (Spring Boot and plain Java paths as strategies mature). When `java_version` is omitted, dockly prefers the **detected** project Java, then falls back to **17**. The **reference sample** ([`java-spring-docker-sample`](https://github.com/mnafshin/java-spring-docker-sample)) stays on Spring Boot 4 / Java 25 to drive benchmark evidence and presentation numbers — that is not a claim that every user must run Java 25.
 
 ## Shipped guarantees (CI-evidenced)
 
@@ -121,7 +137,7 @@ Choose Jib when:
 - your team wants minimal container-layer customization
 - Dockerfile ownership is not required
 
-Choose springdocker when:
+Choose dockly when:
 - your team wants a real Dockerfile artifact in-repo
 - you need explicit, reviewable container decisions
 
@@ -134,7 +150,7 @@ Choose Buildpacks when:
 - platform defaults are enough
 - your team is comfortable with buildpack internals and lifecycle behavior
 
-Choose springdocker when:
+Choose dockly when:
 - you need explicit Dockerfile ownership
 - you want explainable, reviewable Dockerfile output as a first-class artifact
 
@@ -145,19 +161,24 @@ Hand-written Dockerfiles maximize control and flexibility, but they are easy to 
 Choose hand-written Dockerfiles when:
 - your image has highly custom constraints that generators cannot model
 
-Choose springdocker when:
+Choose dockly when:
 - you want a maintainable baseline generated from repeatable conventions
 - you still want manual control after generation
 
 ## Summary
 
-springdocker is for teams that want:
+dockly is for teams that want:
 
 1. a Dockerfile they can own and edit
-2. opinionated defaults for Spring Boot containerization
+2. opinionated defaults for Java / Spring Boot containerization (first-party strategies)
 3. explain-and-verify workflows around the generated output
 4. optional, reproducible benchmark evidence — not a black-box image builder
+5. a clear extension path for other languages via strategies — without first-party polyglot maintenance in v1
 
-## Review backlog
+## Related issues
 
-Scope-vs-polish gaps called out in the repository review (native scaffold, benchmark hygiene, CI smoke builds, sample-tree consolidation, and more) are tracked in the [**Review backlog** milestone](https://github.com/mnafshin/springdocker/milestone/1). Prefer closing those items before expanding public guarantees.
+- [#1](https://github.com/mnafshin/dockly/issues/1) — this product vision (ADR 0011)
+- [#3](https://github.com/mnafshin/dockly/issues/3) — surface rebrand (CLI, PyPI, config, Action, env)
+- [#6](https://github.com/mnafshin/dockly/issues/6) — Strategy API
+- [#9](https://github.com/mnafshin/dockly/issues/9) — optional springdocker compatibility shims
+- [#10](https://github.com/mnafshin/dockly/issues/10) — contributor guide + strategy stubs

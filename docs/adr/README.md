@@ -1,6 +1,6 @@
 # ADR index
 
-Architecture decisions for `springdocker`. User guides live under [`docs/`](../) (`adopt`, `benchmarks`, `jvm`, …) — not in this index.
+Architecture decisions for **dockly** (imported from `springdocker`; product vision in [ADR 0011](0011-dockly-product-vision.md)). User guides live under [`docs/`](../) (`adopt`, `benchmarks`, `jvm`, …) — not in this index.
 
 ## Decisions
 
@@ -14,3 +14,4 @@ Architecture decisions for `springdocker`. User guides live under [`docs/`](../)
 8. [ADR 0008: Target audience](0008-target-audience.md)
 9. [ADR 0009: External sample repository](0009-external-sample-repository.md)
 10. [ADR 0010: POM/Gradle SSOT for the Java builder plugin](0010-pom-gradle-ssot-java-builder.md)
+11. [ADR 0011: Dockly product vision (core + strategies)](0011-dockly-product-vision.md)
