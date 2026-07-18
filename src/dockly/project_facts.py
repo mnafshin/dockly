@@ -310,7 +310,8 @@ def detect_project_facts(
         else (("Spring Boot markers without version",) if has_spring else ("n/a for plain Java",))
     )
 
-    packaging_value, packaging_evidence = ("unknown", ())
+    packaging_value: str = "unknown"
+    packaging_evidence: tuple[str, ...] = ()
     if tool == "maven":
         packaging_value, packaging_evidence = _maven_packaging(root)
     elif tool == "gradle":

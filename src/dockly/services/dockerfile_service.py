@@ -101,6 +101,15 @@ def _resolve_healthcheck_path(
     return configured
 
 
+def _has_build_descriptor(project_root: Path, build_tool: str) -> bool:
+    """True when the tree looks like a real Maven/Gradle project (not an empty generate target)."""
+    if build_tool == "maven":
+        return (project_root / "pom.xml").is_file()
+    return any(
+        (project_root / name).exists() for name in ("gradlew", "build.gradle", "build.gradle.kts")
+    )
+
+
 def dockerfile_options_from_config(
     project_root: Path,
     build_tool: str,
@@ -137,19 +146,21 @@ def dockerfile_options_from_config(
         healthcheck_path=healthcheck_path,
         gradle_descriptor_files=gradle_descriptor_files,
     )
-    facts = detect_project_facts(project_root, build_tool)
-    # Spring: config layered preference is authoritative. Plain Java: never layertools.
-    layered_policy = config.use_layered_jar if facts.framework.value == "spring-boot" else False
-    plan = select_strategy(
-        facts,
-        Policy(
-            force_layered_jar=layered_policy,
-            use_jlink=config.use_jlink,
-            enable_appcds=config.enable_appcds,
-            runtime_image=config.runtime_image,
-        ),
-    )
-    options = apply_strategy_plan(options, plan)
+    # Empty / synthetic trees (benchmark recipe examples) have no descriptors — honor config as-is.
+    if _has_build_descriptor(project_root, build_tool):
+        facts = detect_project_facts(project_root, build_tool)
+        # Spring: config layered preference is authoritative. Plain Java: never layertools.
+        layered_policy = config.use_layered_jar if facts.framework.value == "spring-boot" else False
+        plan = select_strategy(
+            facts,
+            Policy(
+                force_layered_jar=layered_policy,
+                use_jlink=config.use_jlink,
+                enable_appcds=config.enable_appcds,
+                runtime_image=config.runtime_image,
+            ),
+        )
+        options = apply_strategy_plan(options, plan)
     validate_dockerfile_options(options)
     return options
 
