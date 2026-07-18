@@ -106,6 +106,9 @@ def dockerfile_options_from_config(
     build_tool: str,
     config: DockerfileGenerateConfig,
 ) -> DockerfileOptions:
+    from ..project_facts import detect_project_facts
+    from ..strategy import Policy, apply_strategy_plan, select_strategy
+
     must_have_modules = parse_must_have_modules(project_root, config.must_have_modules_file)
     healthcheck_path = _resolve_healthcheck_path(config.healthcheck_path, project_root)
     jlink_baseline_modules = _resolve_jlink_baseline_modules(config.jlink_baseline_modules, project_root)
@@ -134,6 +137,19 @@ def dockerfile_options_from_config(
         healthcheck_path=healthcheck_path,
         gradle_descriptor_files=gradle_descriptor_files,
     )
+    facts = detect_project_facts(project_root, build_tool)
+    # Spring: config layered preference is authoritative. Plain Java: never layertools.
+    layered_policy = config.use_layered_jar if facts.framework.value == "spring-boot" else False
+    plan = select_strategy(
+        facts,
+        Policy(
+            force_layered_jar=layered_policy,
+            use_jlink=config.use_jlink,
+            enable_appcds=config.enable_appcds,
+            runtime_image=config.runtime_image,
+        ),
+    )
+    options = apply_strategy_plan(options, plan)
     validate_dockerfile_options(options)
     return options
 

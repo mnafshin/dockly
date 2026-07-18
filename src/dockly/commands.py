@@ -89,6 +89,15 @@ def _render_inspect_table(info) -> str:
                 ),
             ]
         )
+    plan = getattr(info, "strategy_plan", None)
+    if plan is not None:
+        lines.extend(
+            [
+                "",
+                f"| Strategy | {plan.strategy_id} ({plan.name}) |",
+                f"| Strategy rationale | {plan.rationale} |",
+            ]
+        )
     return "\n".join(lines)
 
 
@@ -100,10 +109,16 @@ def cmd_inspect(project_root: Path, build_tool: str | None, output_format: str) 
         return EXIT_USAGE
 
     from .project_facts import detect_project_facts
+    from .strategy import select_strategy
 
     facts = detect_project_facts(project_root, build_tool)
     # Attach for table renderer without changing InspectInfo dataclass (frozen).
-    info_with_facts = type("InspectView", (), {**info.__dict__, "project_facts": facts})()
+    plan = select_strategy(facts)
+    info_with_facts = type(
+        "InspectView",
+        (),
+        {**info.__dict__, "project_facts": facts, "strategy_plan": plan},
+    )()
 
     payload = {
         "project_root": str(info.root),
@@ -121,6 +136,7 @@ def cmd_inspect(project_root: Path, build_tool: str | None, output_format: str) 
         "modules": list(info.modules),
         "spring_boot_modules": list(info.spring_boot_modules),
         "project_facts": facts.to_dict(),
+        "strategy": plan.to_dict(),
     }
     if output_format == "json":
         print(json.dumps(payload, indent=2, sort_keys=True))

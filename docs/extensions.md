@@ -2,6 +2,8 @@
 
 `dockly` supports runtime plugins through six Python entry-point groups. Architecture decision record: [`adr/0001-plugin-architecture.md`](adr/0001-plugin-architecture.md).
 
+Language/framework Dockerfile optimizations use the **Strategy API** ([`strategies.md`](strategies.md)) — separate from these entry-point groups.
+
 ## Extension points
 
 | Entry-point group | Contract | Used by |
