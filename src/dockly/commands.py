@@ -50,6 +50,7 @@ def cmd_doctor(project_root: Path, build_tool: str | None) -> int:
 
 
 def _render_inspect_table(info) -> str:
+    facts = getattr(info, "project_facts", None)
     lines = [
         "| Field | Value |",
         "|---|---|",
@@ -68,6 +69,26 @@ def _render_inspect_table(info) -> str:
         f"| Spring Boot modules | {', '.join(info.spring_boot_modules) or '-'} |",
         f"| Recommendations | {'; '.join(info.recommendations) or '-'} |",
     ]
+    if facts is not None:
+        lines.extend(
+            [
+                "",
+                "| ProjectFacts | Value | Confidence | Source |",
+                "|---|---|---|---|",
+                f"| Language | {facts.language.value} | {facts.language.confidence} | {facts.language.source} |",
+                f"| Framework | {facts.framework.value} | {facts.framework.confidence} | {facts.framework.source} |",
+                f"| Project kind | {facts.project_kind.value} | {facts.project_kind.confidence} | {facts.project_kind.source} |",
+                f"| Packaging | {facts.packaging.value} | {facts.packaging.confidence} | {facts.packaging.source} |",
+                (
+                    f"| Layered JAR capable | {facts.capabilities.layered_jar.value} | "
+                    f"{facts.capabilities.layered_jar.confidence} | {facts.capabilities.layered_jar.source} |"
+                ),
+                (
+                    f"| Actuator | {facts.capabilities.actuator.value} | "
+                    f"{facts.capabilities.actuator.confidence} | {facts.capabilities.actuator.source} |"
+                ),
+            ]
+        )
     return "\n".join(lines)
 
 
@@ -77,6 +98,12 @@ def cmd_inspect(project_root: Path, build_tool: str | None, output_format: str) 
     except ValueError as exc:
         print_error(str(exc))
         return EXIT_USAGE
+
+    from .project_facts import detect_project_facts
+
+    facts = detect_project_facts(project_root, build_tool)
+    # Attach for table renderer without changing InspectInfo dataclass (frozen).
+    info_with_facts = type("InspectView", (), {**info.__dict__, "project_facts": facts})()
 
     payload = {
         "project_root": str(info.root),
@@ -93,11 +120,12 @@ def cmd_inspect(project_root: Path, build_tool: str | None, output_format: str) 
         "layout": info.layout,
         "modules": list(info.modules),
         "spring_boot_modules": list(info.spring_boot_modules),
+        "project_facts": facts.to_dict(),
     }
     if output_format == "json":
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
-        print(_render_inspect_table(info))
+        print(_render_inspect_table(info_with_facts))
     return EXIT_OK
 
 

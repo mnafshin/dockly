@@ -36,6 +36,10 @@ class InspectCommandTests(unittest.TestCase):
             self.assertEqual(payload["build_tool"], "maven")
             self.assertEqual(payload["java_version"], 25)
             self.assertIn("org.springframework.boot:spring-boot-starter-web", payload["direct_dependencies"])
+            self.assertIn("project_facts", payload)
+            self.assertEqual(payload["project_facts"]["framework"]["value"], "spring-boot")
+            self.assertEqual(payload["project_facts"]["language"]["value"], "java")
+            self.assertIn("confidence", payload["project_facts"]["framework"])
 
     def test_inspect_outputs_table(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -48,6 +52,8 @@ class InspectCommandTests(unittest.TestCase):
             output = stdout.getvalue()
             self.assertIn("| Field | Value |", output)
             self.assertIn("3.3.0", output)
+            self.assertIn("ProjectFacts", output)
+            self.assertIn("spring-boot", output)
 
 
 if __name__ == "__main__":
