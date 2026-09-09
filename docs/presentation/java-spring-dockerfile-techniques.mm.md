@@ -33,6 +33,8 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 
 ---
 
+---
+
 ## 2. Multi-stage
 ### Idea
 - Stage 1: JDK + Maven → JAR
@@ -53,6 +55,8 @@ FROM eclipse-temurin:21-jre
 COPY --from=build /src/target/*.jar /app.jar
 ENTRYPOINT ["java","-jar","/app.jar"]
 ```
+
+---
 
 ---
 
@@ -89,47 +93,19 @@ ENTRYPOINT ["java","org.springframework.boot.loader.launch.JarLauncher"]
 
 ---
 
-## 4. Buildpacks
-### Idea
-- No Dockerfile — builder detects Spring and layers it
-### Free defaults
-- JRE choice, layering, non-root
-- Memory calculator, SBOM
-### Tradeoff
-- + Zero Dockerfile maintenance
-- + Patches arrive via builder updates
-- − Config via env/bindings, not shell
-### Example
-```bash
-./mvnw -DskipTests spring-boot:build-image \
-  -Dspring-boot.build-image.imageName=demo:cnb
-```
-
 ---
 
-## 5. Jib
-### Idea
-- Maven/Gradle plugin builds OCI images directly
-- Pushes without a Docker daemon
-### Tradeoff
-- + Fast incremental builds
-- + No Docker-in-Docker in CI
-- − No arbitrary `RUN` steps
-### Example
-```bash
-./mvnw compile jib:build -Dimage=ghcr.io/acme/demo:jib
-```
-
----
-
-## 6. Base images
+## 4. Base images
 ### Temurin / Corretto / Zulu
 - glibc, fewest surprises
 ### Alpine (musl)
 - Smaller; watch DNS, JNI, agents
 ### Distroless / Chainguard
-- Minimal attack surface, no shell
-- Harder to debug in-container
+- Minimal attack surface, **no shell** in the prod image
+- `docker exec … sh` fails by design — debug from the outside
+- Local: `docker debug <container>` (Docker Desktop / Debug)
+- K8s: `kubectl debug -it POD --image=busybox --target=APP`
+- Ephemeral debug tools; image stays minimal
 ### See also
 - Digest pin, JRE-only → Hardening
 ### Example
@@ -141,52 +117,9 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 
 ---
 
-## 7. Native Image (GraalVM)
-### Idea
-- AOT-compile Spring Boot to a native binary
-- Drop the binary into a tiny base
-### Tradeoff
-- + Tiny image, near-instant startup
-- + Lower memory per service
-- − Slow builds; reflection needs hints
-- − Some libraries and agents unsupported
-### Example
-```dockerfile
-FROM ghcr.io/graalvm/native-image-community:21 AS build
-WORKDIR /src
-COPY . .
-RUN ./mvnw -Pnative -DskipTests native:compile
-
-FROM gcr.io/distroless/base-debian12
-COPY --from=build /src/target/demo /app/demo
-EXPOSE 8080
-ENTRYPOINT ["/app/demo"]
-```
-
 ---
 
-## 8. Startup accelerators
-### CDS
-- Training run in the Dockerfile
-- Start with `-XX:SharedArchiveFile`
-### AOT cache
-- Newer HotSpot; same training-run pattern
-### Spring AOT
-- `spring-boot:process-aot`
-- Less reflection at runtime (JVM or native)
-### Example
-```dockerfile
-# after the layered COPY steps
-RUN java -XX:ArchiveClassesAtExit=application.jsa \
-    -Dspring.context.exit=onRefresh \
-    org.springframework.boot.loader.launch.JarLauncher
-ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
-  "org.springframework.boot.loader.launch.JarLauncher"]
-```
-
----
-
-## 9. Build cache & CI
+## 5. Build cache & CI
 ### Order layers by volatility
 - `pom.xml` first, then sources
 ### BuildKit cache mounts
@@ -215,7 +148,77 @@ cache-to: type=gha,mode=max
 
 ---
 
-## 10. Hardening
+---
+
+## 6. Startup accelerators
+### CDS
+- Training run in the Dockerfile
+- Start with `-XX:SharedArchiveFile`
+### AOT cache
+- Newer HotSpot; same training-run pattern
+### Spring AOT
+- `spring-boot:process-aot`
+- Less reflection at runtime (JVM or native)
+### Example
+```dockerfile
+# after the layered COPY steps
+RUN java -XX:ArchiveClassesAtExit=application.jsa \
+    -Dspring.context.exit=onRefresh \
+    org.springframework.boot.loader.launch.JarLauncher
+ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
+  "org.springframework.boot.loader.launch.JarLauncher"]
+```
+
+---
+
+---
+
+## 7. Custom JRE (`jdeps` + `jlink`)
+### Idea
+- Don't ship a full JDK/JRE distribution
+- `jdeps` finds required modules → `jlink` builds a minimal runtime
+- Final image = slim OS + custom JRE + app
+### Tradeoff
+- + Smaller image, fewer unused modules / CVEs
+- + Pairs well with layered JAR + AOT cache
+- − Extra build stage; module list needs care
+- − Native agents / optional modules easy to miss
+### Flow
+1. Build (or copy) the app JAR
+2. `jdeps --print-module-deps` on app + libs
+3. `jlink --add-modules … --output /javaruntime`
+4. Runtime stage: copy `/javaruntime` + app only
+### Tip
+- Train AOT cache / CDS with the **same** custom JRE you ship
+### Example
+```dockerfile
+FROM eclipse-temurin:25-jdk AS jre
+WORKDIR /work
+COPY target/*-SNAPSHOT.jar app.jar
+RUN jdeps --ignore-missing-deps -q --recursive --multi-release 25 \
+      --print-module-deps app.jar > /tmp/deps.txt 2>/dev/null || true \
+ && echo "java.base,java.logging,java.xml,java.naming,java.desktop,\
+java.management,java.security.jgss,java.instrument,jdk.unsupported,\
+java.net.http,jdk.crypto.ec,java.sql,java.transaction.xa,\
+java.rmi,jdk.jfr,jdk.management" > /tmp/base.txt \
+ && MODULES=$(cat /tmp/deps.txt /tmp/base.txt | tr ',' '\n' \
+      | tr -d ' ' | sort -u | paste -sd,) \
+ && jlink --add-modules "$MODULES" \
+      --strip-debug --no-man-pages --no-header-files --compress=2 \
+      --output /javaruntime
+
+FROM debian:bookworm-slim
+COPY --from=jre /javaruntime /opt/java
+ENV PATH="/opt/java/bin:${PATH}"
+COPY target/*-SNAPSHOT.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+---
+
+---
+
+## 8. Hardening
 ### Identity & process
 - Non-root `USER` before ENTRYPOINT
 - Exec-form ENTRYPOINT (SIGTERM reaches JVM)
@@ -258,61 +261,25 @@ cosign sign --yes ghcr.io/acme/demo@sha256:…
 
 ---
 
-## 11. Packaging variants
-### Uber JAR
-- Default; works with everything above
-### Exploded / thin
-- `lib/` split from `classes/`
-### WAR + Tomcat
-- Tomcat base, WAR into `webapps/`
-- Rare for greenfield Boot
-### jlink custom JRE
-- Minimal runtime built in a builder stage
-### Example
-```dockerfile
-FROM eclipse-temurin:21-jre
-WORKDIR /app
-COPY target/dependency/ ./lib/
-COPY target/classes/ ./classes/
-ENTRYPOINT ["java","-cp","classes:lib/*","com.example.DemoApplication"]
-```
-
 ---
 
-## 12. Decision guide
-### Just make it work
-- Fat JAR on Temurin JRE
-### Fast CI, keep Dockerfile
-- Multi-stage + layered `jarmode`
-### No Dockerfile
-- `spring-boot:build-image`
-### Daemonless CI
-- Jib
-### Tiny + fast cold start
-- GraalVM Native Image
-### Squeeze JVM startup
-- Layered + CDS/AOT training run
-
----
-
-## 13. Kitchen sink (Java 21 JVM path)
+## 9. Kitchen sink (Java 25 JVM path)
 ### Combines in one Dockerfile
 - Multi-stage + BuildKit cache
 - Spring AOT (`process-aot`)
 - Layered JAR (`jarmode`)
-- `jdeps` → `jlink` custom JRE
-- CDS training (Java 21)
+- Custom JRE (`jdeps` → `jlink`)
+- HotSpot **AOT cache** (no CDS)
 - Hardening: non-root, `MaxRAMPercentage`, slim base
 ### Not in the same file
 - Buildpacks / Jib (replace the Dockerfile)
 - GraalVM Native (different runtime)
-- HotSpot AOT cache → needs **Java 24+** (swap CDS block)
 ### Example
 ```dockerfile
 # syntax=docker/dockerfile:1
-# Java 21: Spring AOT + layered + jdeps/jlink + CDS + hardening
+# Java 25: Spring AOT + layered + jdeps/jlink + AOT cache + hardening
 
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /src
 COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 \
@@ -321,17 +288,16 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B -DskipTests spring-boot:process-aot package
 
-FROM eclipse-temurin:21-jdk AS extractor
+FROM eclipse-temurin:25-jdk AS extractor
 WORKDIR /builder
 COPY --from=build /src/target/*-SNAPSHOT.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract \
     --layers --destination extracted
 
-FROM eclipse-temurin:21-jdk AS jre
+FROM eclipse-temurin:25-jdk AS jre
 WORKDIR /work
 COPY --from=extractor /builder/extracted /work/extracted
-# Resolve modules; fall back to a safe Spring set if jdeps is sparse
-RUN jdeps --ignore-missing-deps -q --recursive --multi-release 21 \
+RUN jdeps --ignore-missing-deps -q --recursive --multi-release 25 \
       --print-module-deps \
       --class-path 'extracted/dependencies/BOOT-INF/lib/*' \
       extracted/application/BOOT-INF/classes \
@@ -362,32 +328,83 @@ COPY --from=extractor --chown=app:app \
 COPY --from=extractor --chown=app:app \
   /builder/extracted/application/ ./
 
-# CDS training (same custom JRE as runtime)
-RUN java -XX:ArchiveClassesAtExit=application.jsa \
+# AOT cache training (same custom JRE as runtime) — Java 25+
+RUN java -XX:AOTCacheOutput=app.aot \
       -Dspring.context.exit=onRefresh \
-      org.springframework.boot.loader.launch.JarLauncher \
- && chown app:app application.jsa
+      -jar application.jar \
+ && chown app:app app.aot
 
 USER app
 EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
-ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
-  "org.springframework.boot.loader.launch.JarLauncher"]
-```
-### Java 24+: swap CDS for AOT cache
-```dockerfile
-RUN java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconf \
-      -Dspring.context.exit=onRefresh \
-      org.springframework.boot.loader.launch.JarLauncher \
- && java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \
-      -XX:AOTCache=app.aot \
-      org.springframework.boot.loader.launch.JarLauncher \
- && rm app.aotconf && chown app:app app.aot
-ENTRYPOINT ["java","-XX:AOTCache=app.aot",\
-  "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java","-XX:AOTCache=app.aot","-jar","application.jar"]
 ```
 ### After build (CI)
 ```bash
 syft demo:prod -o spdx-json > sbom.spdx.json
 cosign sign --yes ghcr.io/acme/demo@sha256:…
 ```
+
+---
+
+## 10. Alternatives without a Dockerfile
+### Buildpacks
+- `./mvnw spring-boot:build-image` — Paketo builds the image for you
+- + Zero Dockerfile maintenance; layering, non-root, SBOM baked in
+- − Less control; config via env/bindings; heavy first builds
+### Jib
+- Maven/Gradle plugin builds/pushes OCI images (often daemonless)
+- + Fast incremental layers; no Docker-in-Docker in CI
+- − No arbitrary `RUN` steps; different mental model than Dockerfiles
+### When to use
+- Want convention over a hand-written Dockerfile
+- Otherwise stay on multi-stage + layered JAR for full control
+
+---
+
+---
+
+## 11. Native Image (GraalVM)
+### Idea
+- AOT-compile Spring Boot to a native binary
+- Drop the binary into a tiny base
+### Tradeoff
+- + Tiny image, near-instant startup
+- + Lower memory per service
+- − Slow builds; reflection needs hints
+- − Some libs / agents unsupported or painful
+  (Java agents like Datadog/New Relic `-javaagent`,
+  runtime bytecode gen like CGLIB/Byte Buddy,
+  load-time weaving, dynamic classloading)
+### Example
+```dockerfile
+FROM ghcr.io/graalvm/native-image-community:21 AS build
+WORKDIR /src
+COPY . .
+RUN ./mvnw -Pnative -DskipTests native:compile
+
+FROM gcr.io/distroless/base-debian12
+COPY --from=build /src/target/demo /app/demo
+EXPOSE 8080
+ENTRYPOINT ["/app/demo"]
+```
+
+---
+
+---
+
+## 12. Decision guide
+### Just make it work
+- Fat JAR on Temurin JRE
+### Fast CI, keep Dockerfile
+- Multi-stage + layered `jarmode`
+### Smaller JVM runtime
+- Custom JRE via `jdeps` + `jlink`
+### Squeeze JVM startup
+- Layered + AOT cache (Java 25) or CDS (≤23)
+### No Dockerfile
+- Buildpacks (`spring-boot:build-image`) or Jib
+### Tiny + fast cold start
+- GraalVM Native Image
+
+---
