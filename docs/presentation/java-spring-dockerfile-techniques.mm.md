@@ -14,6 +14,11 @@ markmap:
 - Fat JAR: ~150MB pushed per code change
 - Layered: often <5MB pushed per code change
 
+## Baseline
+- Spring Boot **3.3+** (`jarmode=tools`; older docs used `layertools`)
+- Most examples: Java **21**
+- Custom JRE / kitchen sink / AOT cache: Java **25**
+
 ---
 
 ## 1. Naive fat JAR
@@ -30,8 +35,6 @@ COPY target/*.jar /app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app.jar"]
 ```
-
----
 
 ---
 
@@ -58,13 +61,13 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 
 ---
 
----
-
 ## 3. Layered JAR (`jarmode`)
 ### Idea
 - Boot splits the JAR by change frequency
 - Each layer → its own Docker layer
 - Code change rebuilds only `application/`
+### Needs
+- Spring Boot **3.3+** (`-Djarmode=tools`)
 ### Layers (stable → volatile)
 - `dependencies`
 - `spring-boot-loader`
@@ -76,9 +79,11 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 - − More Dockerfile complexity
 ### Example
 ```dockerfile
+# Official layout: extract --layers (no --launcher)
 FROM eclipse-temurin:21-jre AS builder
 WORKDIR /builder
-COPY target/*.jar application.jar
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=tools -jar application.jar extract \
     --layers --destination extracted
 
@@ -88,10 +93,12 @@ COPY --from=builder /builder/extracted/dependencies/ ./
 COPY --from=builder /builder/extracted/spring-boot-loader/ ./
 COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
 COPY --from=builder /builder/extracted/application/ ./
-ENTRYPOINT ["java","org.springframework.boot.loader.launch.JarLauncher"]
+# Thin application.jar + lib/ — not JarLauncher
+ENTRYPOINT ["java","-jar","application.jar"]
 ```
-
----
+### Note
+- `--launcher` → `JarLauncher` classpath layout (different ENTRYPOINT)
+- Default (above) → thin `application.jar` + `lib/` (CDS/AOT friendly)
 
 ---
 
@@ -120,15 +127,15 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 
 ---
 
----
-
 ## 5. Build cache & CI
 ### Order layers by volatility
 - `pom.xml` first, then sources
 ### BuildKit cache mounts
-- Reuse `~/.m2` across builds
+- Reuse `~/.m2` across builds on the **same** BuildKit builder
 ### `.dockerignore`
-- Drop `.git`, `target`, IDE files, docs
+- Always drop `.git`, IDE files, docs
+- Drop `target/` only when the Dockerfile **builds inside** Docker
+- Keep `target/*.jar` in context for prebuilt-JAR Dockerfiles (§1, §3)
 ### Example
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -148,8 +155,7 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 cache-from: type=gha
 cache-to: type=gha,mode=max
 ```
-
----
+- GHA cache = **image layers**, not the `~/.m2` BuildKit mount
 
 ---
 
@@ -157,22 +163,22 @@ cache-to: type=gha,mode=max
 ### CDS
 - Training run in the Dockerfile
 - Start with `-XX:SharedArchiveFile`
+- Works on Java 21–25; prefer AOT cache when available
 ### AOT cache
-- Newer HotSpot; same training-run pattern
+- HotSpot (Java 24+; one-step `-XX:AOTCacheOutput` on **25+**)
+- Same training-run pattern as CDS
 ### Spring AOT
-- `spring-boot:process-aot`
+- Build: `spring-boot:process-aot` (after `compile`)
+- Runtime JVM: `-Dspring.aot.enabled=true`
 - Less reflection at runtime (JVM or native)
-### Example
+### Example (CDS, after layered COPY)
 ```dockerfile
-# after the layered COPY steps
 RUN java -XX:ArchiveClassesAtExit=application.jsa \
     -Dspring.context.exit=onRefresh \
-    org.springframework.boot.loader.launch.JarLauncher
+    -jar application.jar
 ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
-  "org.springframework.boot.loader.launch.JarLauncher"]
+  "-jar","application.jar"]
 ```
-
----
 
 ---
 
@@ -187,8 +193,8 @@ ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
 - − Extra build stage; module list needs care
 - − Native agents / optional modules easy to miss
 ### Flow
-1. Build (or copy) the app JAR
-2. `jdeps --print-module-deps` on app + libs
+1. Extract layered JAR (don't jdeps the fat JAR)
+2. `jdeps --print-module-deps` on thin jar + `lib/*`
 3. `jlink --add-modules … --output /javaruntime`
 4. Runtime stage: copy `/javaruntime` + app only
 ### Tip
@@ -200,9 +206,14 @@ ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
 ```dockerfile
 FROM eclipse-temurin:25-jdk AS jre
 WORKDIR /work
-COPY target/*-SNAPSHOT.jar app.jar
-RUN jdeps --ignore-missing-deps -q --recursive --multi-release 25 \
-      --print-module-deps app.jar > /tmp/deps.txt 2>/dev/null || true \
+COPY target/*.jar application.jar
+RUN java -Djarmode=tools -jar application.jar extract \
+      --layers --destination extracted \
+ && jdeps --ignore-missing-deps -q --recursive --multi-release 25 \
+      --print-module-deps \
+      --class-path 'extracted/dependencies/lib/*' \
+      extracted/application/application.jar \
+      > /tmp/deps.txt \
  && echo "java.base,java.logging,java.xml,java.naming,java.desktop,\
 java.management,java.security.jgss,java.instrument,jdk.unsupported,\
 java.net.http,jdk.crypto.ec,java.sql,java.transaction.xa,\
@@ -210,23 +221,25 @@ java.rmi,jdk.jfr,jdk.management" > /tmp/base.txt \
  && MODULES=$(cat /tmp/deps.txt /tmp/base.txt | tr ',' '\n' \
       | tr -d ' ' | sort -u | paste -sd,) \
  && jlink --add-modules "$MODULES" \
-      --strip-debug --no-man-pages --no-header-files --compress=2 \
+      --strip-debug --no-man-pages --no-header-files --compress=zip-6 \
       --output /javaruntime
 
 FROM debian:bookworm-slim
 COPY --from=jre /javaruntime /opt/java
 ENV PATH="/opt/java/bin:${PATH}"
-COPY target/*-SNAPSHOT.jar /app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+WORKDIR /application
+COPY --from=jre /work/extracted/dependencies/ ./
+COPY --from=jre /work/extracted/spring-boot-loader/ ./
+COPY --from=jre /work/extracted/snapshot-dependencies/ ./
+COPY --from=jre /work/extracted/application/ ./
+ENTRYPOINT ["java","-jar","application.jar"]
 ```
-
----
 
 ---
 
 ## 8. Hardening
 ### Identity & process
-- Non-root `USER` before ENTRYPOINT
+- Non-root **numeric** `USER` before ENTRYPOINT
 - Exec-form ENTRYPOINT (SIGTERM reaches JVM)
   — not `ENTRYPOINT java -jar /app.jar`
   — use `ENTRYPOINT ["java","-jar","/app.jar"]`
@@ -235,6 +248,7 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 # Compose / K8s idea
 securityContext:
   runAsNonRoot: true
+  runAsUser: 10001
   allowPrivilegeEscalation: false
   capabilities: { drop: ["ALL"] }
 ```
@@ -253,21 +267,21 @@ securityContext:
 FROM eclipse-temurin:21-jre@sha256:abc123…
 ```
 ### SBOM & provenance
-- Emit SBOM (Syft, Buildpacks, `docker buildx --sbom`)
-- Sign images (Cosign) + verify in deploy
-- Prefer attested builds (SLSA / provenance)
+- SBOM = what's inside; provenance = how it was built
+- Prefer BuildKit-generated attestations on push
 ```bash
-# SBOM
-syft ghcr.io/acme/demo:1.2.3 -o spdx-json > sbom.spdx.json
-docker buildx build --sbom=true --provenance=true -t demo:1.2.3 .
+# Needs container driver + registry push
+docker buildx build --sbom=true --provenance=true \
+  -t ghcr.io/acme/demo:1.2.3 --push .
 
-# Sign + verify
+# Optional extra SBOM export
+syft ghcr.io/acme/demo:1.2.3 -o spdx-json > sbom.spdx.json
+
+# Sign + verify image
 cosign sign --yes ghcr.io/acme/demo@sha256:…
 cosign verify ghcr.io/acme/demo@sha256:…
 
-# Provenance attestation (buildx / SLSA-style)
-cosign attest --predicate provenance.json \
-  --type slsaprovenance ghcr.io/acme/demo@sha256:…
+# Verify BuildKit provenance (don't hand-author if buildx emitted it)
 cosign verify-attestation --type slsaprovenance \
   ghcr.io/acme/demo@sha256:…
 ```
@@ -297,21 +311,24 @@ ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ```dockerfile
 FROM eclipse-temurin:21-jre@sha256:REPLACE_WITH_REAL_DIGEST
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app app
-COPY --chown=app:app target/*.jar app.jar
-USER app
+RUN groupadd --system --gid 10001 app \
+ && useradd --system --uid 10001 --gid app app
+COPY --chown=10001:10001 target/*.jar app.jar
+USER 10001
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 ```
 
+---
+
 ## 9. Kitchen sink (Java 25 JVM path)
 ### Combines in one Dockerfile
 - Multi-stage + BuildKit cache
-- Spring AOT (`process-aot`)
+- Spring AOT (`process-aot` + `-Dspring.aot.enabled=true`)
 - Layered JAR (`jarmode`)
 - Custom JRE (`jdeps` → `jlink`)
 - HotSpot **AOT cache** (no CDS)
-- Hardening: non-root, `MaxRAMPercentage`, slim base
+- Hardening: numeric non-root, `MaxRAMPercentage`, slim base
 ### Companion steps (CI — not in the Dockerfile)
 - SBOM, provenance, sign, scan
 ### Not in the same file
@@ -328,12 +345,13 @@ COPY pom.xml .
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B dependency:go-offline
 COPY src ./src
+# compile before process-aot; package produces the boot jar
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -DskipTests spring-boot:process-aot package
+    mvn -B -DskipTests compile spring-boot:process-aot package
 
 FROM eclipse-temurin:25-jdk AS extractor
 WORKDIR /builder
-COPY --from=build /src/target/*-SNAPSHOT.jar application.jar
+COPY --from=build /src/target/*.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract \
     --layers --destination extracted
 
@@ -342,9 +360,9 @@ WORKDIR /work
 COPY --from=extractor /builder/extracted /work/extracted
 RUN jdeps --ignore-missing-deps -q --recursive --multi-release 25 \
       --print-module-deps \
-      --class-path 'extracted/dependencies/BOOT-INF/lib/*' \
-      extracted/application/BOOT-INF/classes \
-      > /tmp/deps.txt 2>/dev/null || true \
+      --class-path 'extracted/dependencies/lib/*' \
+      extracted/application/application.jar \
+      > /tmp/deps.txt \
  && echo "java.base,java.logging,java.xml,java.naming,java.desktop,\
 java.management,java.security.jgss,java.instrument,jdk.unsupported,\
 java.net.http,jdk.crypto.ec,java.sql,java.transaction.xa,\
@@ -352,34 +370,35 @@ java.rmi,jdk.jfr,jdk.management" > /tmp/base.txt \
  && MODULES=$(cat /tmp/deps.txt /tmp/base.txt | tr ',' '\n' \
       | tr -d ' ' | sort -u | paste -sd,) \
  && jlink --add-modules "$MODULES" \
-      --strip-debug --no-man-pages --no-header-files --compress=2 \
+      --strip-debug --no-man-pages --no-header-files --compress=zip-6 \
       --output /javaruntime
 
 FROM debian:bookworm-slim
 COPY --from=jre /javaruntime /opt/java
 ENV PATH="/opt/java/bin:${PATH}"
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -Dspring.aot.enabled=true"
 WORKDIR /application
 
-RUN groupadd --system app && useradd --system --gid app app
+RUN groupadd --system --gid 10001 app \
+ && useradd --system --uid 10001 --gid app app
 
-COPY --from=extractor --chown=app:app \
+COPY --from=extractor --chown=10001:10001 \
   /builder/extracted/dependencies/ ./
-COPY --from=extractor --chown=app:app \
+COPY --from=extractor --chown=10001:10001 \
   /builder/extracted/spring-boot-loader/ ./
-COPY --from=extractor --chown=app:app \
+COPY --from=extractor --chown=10001:10001 \
   /builder/extracted/snapshot-dependencies/ ./
-COPY --from=extractor --chown=app:app \
+COPY --from=extractor --chown=10001:10001 \
   /builder/extracted/application/ ./
 
-# AOT cache training (same custom JRE as runtime) — Java 25+
+# AOT cache training — JAVA_TOOL_OPTIONS already matches runtime
 RUN java -XX:AOTCacheOutput=app.aot \
       -Dspring.context.exit=onRefresh \
       -jar application.jar \
- && chown app:app app.aot
+ && chown 10001:10001 app.aot
 
-USER app
+USER 10001
 EXPOSE 8080
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ENTRYPOINT ["java","-XX:AOTCache=app.aot","-jar","application.jar"]
 ```
 ### Companion example (CI)
@@ -389,8 +408,8 @@ docker buildx build --sbom=true --provenance=true \
 
 syft ghcr.io/acme/demo:1.2.3 -o spdx-json > sbom.spdx.json
 cosign sign --yes ghcr.io/acme/demo@sha256:…
-cosign attest --predicate provenance.json \
-  --type slsaprovenance ghcr.io/acme/demo@sha256:…
+cosign verify-attestation --type slsaprovenance \
+  ghcr.io/acme/demo@sha256:…
 trivy image --exit-code 1 --severity HIGH,CRITICAL \
   ghcr.io/acme/demo:1.2.3
 ```
@@ -409,8 +428,6 @@ trivy image --exit-code 1 --severity HIGH,CRITICAL \
 ### When to use
 - Want convention over a hand-written Dockerfile
 - Otherwise stay on multi-stage + layered JAR for full control
-
----
 
 ---
 
@@ -441,8 +458,6 @@ ENTRYPOINT ["/app/demo"]
 
 ---
 
----
-
 ## 12. Decision guide
 ### Just make it work
 - Fat JAR on Temurin JRE
@@ -451,10 +466,9 @@ ENTRYPOINT ["/app/demo"]
 ### Smaller JVM runtime
 - Custom JRE via `jdeps` + `jlink`
 ### Squeeze JVM startup
-- Layered + AOT cache (Java 25) or CDS (≤23)
+- Prefer **AOT cache** on Java 25+ (`-XX:AOTCacheOutput`)
+- CDS still fine on 21–25 when AOT cache isn't an option
 ### No Dockerfile
 - Buildpacks (`spring-boot:build-image`) or Jib
 ### Tiny + fast cold start
 - GraalVM Native Image
-
----
