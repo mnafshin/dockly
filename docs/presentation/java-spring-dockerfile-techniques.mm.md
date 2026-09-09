@@ -2,7 +2,7 @@
 title: Java + Spring Dockerfile Techniques
 markmap:
   colorFreezeLevel: 2
-  maxWidth: 320
+  maxWidth: 420
   initialExpandLevel: 2
 ---
 
@@ -13,6 +13,9 @@ markmap:
 - Packaged JVM + app + deps as one artifact
 - Fits K8s / Cloud Run / ECS deployments
 - Tradeoffs: image size, build time, cache reuse, security surface
+### Example tradeoff
+- Fat JAR image: simple, rebuilds ~150MB on every code change
+- Layered image: first build similar size; later pushes often &lt;5MB
 
 ## Technique map (pick by goal)
 - Full control → hand-written Dockerfile
@@ -26,10 +29,6 @@ markmap:
 ### Idea
 - Build JAR outside Docker (or copy prebuilt JAR)
 - Single `FROM` + `COPY` + `java -jar`
-### Typical sketch
-- `FROM eclipse-temurin:21-jre`
-- `COPY target/app.jar /app.jar`
-- `ENTRYPOINT ["java","-jar","/app.jar"]`
 ### Pros
 - Simplest to understand
 - Few moving parts
@@ -38,6 +37,20 @@ markmap:
 - Any code change invalidates the whole JAR layer
 - Easy to ship JDK by mistake
 - Weak caching for CI / registries
+### Example Dockerfile
+```dockerfile
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY target/demo-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+### Example build & run
+```bash
+./mvnw -DskipTests package
+docker build -t demo:naive .
+docker run --rm -p 8080:8080 demo:naive
+```
 
 ---
 
@@ -48,19 +61,43 @@ markmap:
 ### Why it helps
 - Final image has no Maven, no source, no build cache
 - Reproducible builds in CI without host JDK
-### Common bases (build)
-- `maven:3.9-eclipse-temurin-21`
-- `gradle:8-jdk21`
-### Common bases (runtime)
-- `eclipse-temurin:21-jre`
-- `amazoncorretto:21-al2023-headless`
-- Alpine / Distroless variants (see Base images)
 ### Pros
 - Self-contained build
 - Smaller runtime than single-stage JDK images
 ### Cons
 - Without layering, still one fat JAR layer
 - Slow if dependency download not cached well
+### Example (Maven)
+```dockerfile
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /src/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+### Example (Gradle)
+```dockerfile
+FROM gradle:8-jdk21 AS build
+WORKDIR /src
+COPY build.gradle settings.gradle ./
+COPY src ./src
+RUN gradle bootJar --no-daemon
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /src/build/libs/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+### Example build
+```bash
+docker build -t demo:multistage .
+```
 
 ---
 
@@ -78,11 +115,6 @@ markmap:
 - `java -Djarmode=tools -jar app.jar extract --layers --destination extracted`
 ### Legacy note
 - Older docs used `-Djarmode=layertools`
-### Dockerfile pattern
-1. Builder: produce or copy uber-JAR
-2. Extract layers with jarmode
-3. Runtime: `COPY` layers in order (deps → loader → snapshots → app)
-4. `ENTRYPOINT` via `JarLauncher` or `java -jar`
 ### Pros
 - Best cache hit rate for classic JVM images
 - Official Spring-recommended Dockerfile path
@@ -90,6 +122,50 @@ markmap:
 ### Cons
 - More Dockerfile complexity
 - Still a JVM image (size/startup vs native)
+### Example Dockerfile (prebuilt JAR)
+```dockerfile
+FROM eclipse-temurin:21-jre AS builder
+WORKDIR /builder
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+RUN java -Djarmode=tools -jar application.jar extract \
+    --layers --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /application
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
+ENTRYPOINT ["java","org.springframework.boot.loader.launch.JarLauncher"]
+```
+### Example Dockerfile (build + extract)
+```dockerfile
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+FROM eclipse-temurin:21-jre AS extractor
+WORKDIR /builder
+COPY --from=build /src/target/*.jar application.jar
+RUN java -Djarmode=tools -jar application.jar extract \
+    --layers --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /application
+COPY --from=extractor /builder/extracted/dependencies/ ./
+COPY --from=extractor /builder/extracted/spring-boot-loader/ ./
+COPY --from=extractor /builder/extracted/snapshot-dependencies/ ./
+COPY --from=extractor /builder/extracted/application/ ./
+ENTRYPOINT ["java","org.springframework.boot.loader.launch.JarLauncher"]
+```
+### Example build
+```bash
+./mvnw -DskipTests package
+docker build -t demo:layered .
+```
 
 ---
 
@@ -111,9 +187,37 @@ markmap:
 - Less control than a custom Dockerfile
 - First builds pull large builder images
 - Customization via env/bindings, not free-form shell
-### When to choose
-- Teams that want convention over configuration
-- Spring Boot plugin already in the project
+### Example (Maven CLI)
+```bash
+./mvnw -DskipTests spring-boot:build-image \
+  -Dspring-boot.build-image.imageName=demo:buildpacks
+```
+### Example (Gradle CLI)
+```bash
+./gradlew bootBuildImage --imageName=demo:buildpacks
+```
+### Example (pom.xml snippet)
+```xml
+<plugin>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-maven-plugin</artifactId>
+  <configuration>
+    <image>
+      <name>ghcr.io/acme/demo:${project.version}</name>
+      <env>
+        <BPE_APPEND_JAVA_TOOL_OPTIONS>
+          -XX:MaxRAMPercentage=75.0
+        </BPE_APPEND_JAVA_TOOL_OPTIONS>
+      </env>
+    </image>
+  </configuration>
+</plugin>
+```
+### Example (native via Buildpacks)
+```bash
+./mvnw -DskipTests spring-boot:build-image \
+  -Dspring-boot.build-image.environment.BP_NATIVE_IMAGE=true
+```
 
 ---
 
@@ -129,9 +233,49 @@ markmap:
 ### Cons
 - Less flexible than arbitrary Dockerfile RUN steps
 - Learning curve for advanced config (entrypoint, volumes, auth)
-### When to choose
-- Polyrepo Java services in CI
-- Need daemonless image builds
+### Example (pom.xml plugin)
+```xml
+<plugin>
+  <groupId>com.google.cloud.tools</groupId>
+  <artifactId>jib-maven-plugin</artifactId>
+  <version>3.4.4</version>
+  <configuration>
+    <to>
+      <image>ghcr.io/acme/demo</image>
+    </to>
+    <container>
+      <ports>
+        <port>8080</port>
+      </ports>
+      <jvmFlags>
+        <jvmFlag>-XX:MaxRAMPercentage=75.0</jvmFlag>
+      </jvmFlags>
+    </container>
+  </configuration>
+</plugin>
+```
+### Example commands
+```bash
+# Needs Docker daemon (loads into local Docker)
+./mvnw compile jib:dockerBuild -Dimage=demo:jib
+
+# Daemonless — push straight to a registry
+./mvnw compile jib:build \
+  -Dimage=ghcr.io/acme/demo:jib
+```
+### Example (Gradle)
+```kotlin
+plugins {
+  id("com.google.cloud.tools.jib") version "3.4.4"
+}
+jib {
+  to { image = "ghcr.io/acme/demo" }
+  container {
+    ports = listOf("8080")
+    jvmFlags = listOf("-XX:MaxRAMPercentage=75.0")
+  }
+}
+```
 
 ---
 
@@ -150,6 +294,28 @@ markmap:
 ### Rule of thumb
 - Runtime = **JRE**, not JDK
 - Pin digests or immutable tags in production
+### Example: Temurin JRE
+```dockerfile
+FROM eclipse-temurin:21.0.4_7-jre
+COPY app.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+### Example: Alpine
+```dockerfile
+FROM eclipse-temurin:21-jre-alpine
+COPY app.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+### Example: Distroless
+```dockerfile
+FROM gcr.io/distroless/java21-debian12
+COPY app.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+### Example: pin by digest
+```dockerfile
+FROM eclipse-temurin:21-jre@sha256:REPLACE_WITH_REAL_DIGEST
+```
 
 ---
 
@@ -157,9 +323,6 @@ markmap:
 ### Idea
 - Ahead-of-time compile Spring Boot (AOT) to a native binary
 - Dockerfile copies binary into a tiny runtime (or uses buildpacks)
-### Multi-stage sketch
-- Build stage: GraalVM + native-image build
-- Runtime: `scratch` / distroless / static musl image + binary
 ### Pros
 - Very small images
 - Instant / near-instant startup
@@ -168,8 +331,39 @@ markmap:
 - Longer builds
 - Reflection / resources need hints (Spring AOT helps a lot)
 - Some libraries / agents unsupported
-### Via Buildpacks
-- Set `BP_NATIVE_IMAGE=true` instead of hand-rolling Graal Dockerfile
+### Example multi-stage Dockerfile
+```dockerfile
+FROM ghcr.io/graalvm/native-image-community:21 AS build
+WORKDIR /src
+COPY . .
+RUN ./mvnw -Pnative -DskipTests native:compile
+
+FROM gcr.io/distroless/base-debian12
+WORKDIR /app
+COPY --from=build /src/target/demo /app/demo
+EXPOSE 8080
+ENTRYPOINT ["/app/demo"]
+```
+### Example (pom native profile)
+```xml
+<profile>
+  <id>native</id>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.graalvm.buildtools</groupId>
+        <artifactId>native-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</profile>
+```
+### Example via Buildpacks
+```bash
+./mvnw -DskipTests spring-boot:build-image \
+  -Dspring-boot.build-image.environment.BP_NATIVE_IMAGE=true \
+  -Dspring-boot.build-image.imageName=demo:native
+```
 
 ---
 
@@ -185,6 +379,32 @@ markmap:
 ### Spring AOT (build-time)
 - `spring-boot:process-aot` / native AOT processing
 - Shrinks runtime reflection work (JVM or native)
+### Example: CDS training in Dockerfile
+```dockerfile
+FROM eclipse-temurin:21-jre AS builder
+WORKDIR /builder
+COPY target/*.jar application.jar
+RUN java -Djarmode=tools -jar application.jar extract \
+    --layers --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /application
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
+# Training run creates the CDS archive
+RUN java -XX:ArchiveClassesAtExit=application.jsa \
+    -Dspring.context.exit=onRefresh \
+    org.springframework.boot.loader.launch.JarLauncher
+ENTRYPOINT ["java",\
+  "-XX:SharedArchiveFile=application.jsa",\
+  "org.springframework.boot.loader.launch.JarLauncher"]
+```
+### Example: Spring AOT process (build time)
+```bash
+./mvnw -DskipTests spring-boot:process-aot package
+```
 
 ---
 
@@ -202,6 +422,44 @@ markmap:
 ### Prebuilt JAR vs build-in-Docker
 - Prebuilt: faster Docker step, needs host/CI Java build
 - In-Docker: more hermetic, heavier Dockerfile
+### Example: dep layer + BuildKit cache
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM maven:3.9-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY pom.xml .
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B dependency:go-offline
+COPY src ./src
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -DskipTests package
+
+FROM eclipse-temurin:21-jre
+COPY --from=build /src/target/*.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+### Example: .dockerignore
+```gitignore
+.git
+.idea
+*.iml
+target
+build
+.gradle
+docs
+*.md
+```
+### Example CI (GitHub Actions snippet)
+```yaml
+- uses: docker/setup-buildx-action@v3
+- uses: docker/build-push-action@v6
+  with:
+    context: .
+    push: true
+    tags: ghcr.io/acme/demo:latest
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
 
 ---
 
@@ -220,6 +478,36 @@ markmap:
 ### Health
 - Expose actuator/`/` health for orchestrators
 - Keep probes lightweight
+### Example hardened Dockerfile
+```dockerfile
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+RUN groupadd --system app && useradd --system --gid app app
+COPY --chown=app:app target/*.jar app.jar
+USER app
+EXPOSE 8080
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+### Example: Alpine non-root
+```dockerfile
+FROM eclipse-temurin:21-jre-alpine
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
+COPY --chown=app:app target/*.jar app.jar
+USER app
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=75.0","-jar","/app/app.jar"]
+```
+### Example: K8s probes (actuator)
+```yaml
+livenessProbe:
+  httpGet: { path: /actuator/health/liveness, port: 8080 }
+readinessProbe:
+  httpGet: { path: /actuator/health/readiness, port: 8080 }
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+```
 
 ---
 
@@ -234,22 +522,82 @@ markmap:
 ### Modular / jlink custom JRE
 - Build a minimal JRE with `jlink` in a builder stage
 - Advanced size optimization on JVM path
+### Example: uber JAR (default)
+```dockerfile
+FROM eclipse-temurin:21-jre
+COPY target/demo.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+### Example: exploded classpath layout
+```dockerfile
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY target/dependency/ ./lib/
+COPY target/classes/ ./classes/
+ENTRYPOINT ["java","-cp","classes:lib/*","com.example.DemoApplication"]
+```
+### Example: WAR on Tomcat
+```dockerfile
+FROM tomcat:10.1-jdk21-temurin
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY target/demo.war /usr/local/tomcat/webapps/ROOT.war
+EXPOSE 8080
+```
+### Example: jlink custom JRE
+```dockerfile
+FROM eclipse-temurin:21-jdk AS jre-build
+RUN jlink --add-modules java.base,java.logging,java.xml,\
+    java.naming,java.desktop,java.management,java.security.jgss,\
+    java.instrument,jdk.unsupported,java.net.http \
+  --strip-debug --no-man-pages --no-header-files \
+  --compress=2 --output /javaruntime
+
+FROM debian:bookworm-slim
+COPY --from=jre-build /javaruntime /opt/java
+ENV PATH="/opt/java/bin:${PATH}"
+COPY target/demo.jar /app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
 
 ---
 
 ## 12. Quick decision guide
 ### “Just make it work”
 → Naive fat JAR on Temurin JRE
+#### Example
+```bash
+docker build -f Dockerfile.naive -t demo:simple .
+```
 ### “Fast CI deploys, keep Dockerfile”
 → Multi-stage + layered JAR (`jarmode`)
+#### Example
+```bash
+docker build -f Dockerfile.layered -t demo:layered .
+```
 ### “No Dockerfile, Spring-native DX”
 → `spring-boot:build-image` (Buildpacks)
+#### Example
+```bash
+./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=demo:cnb
+```
 ### “Daemonless CI, Java-centric”
 → Jib
+#### Example
+```bash
+./mvnw compile jib:build -Dimage=ghcr.io/acme/demo:jib
+```
 ### “Tiny + fast cold start”
 → GraalVM Native Image (Dockerfile or Buildpacks)
+#### Example
+```bash
+./mvnw -Pnative -DskipTests native:compile
+```
 ### “Tune JVM startup further”
 → Layered image + CDS / AOT cache training run
+#### Example
+```bash
+docker build -f Dockerfile.cds -t demo:cds .
+```
 
 ---
 
