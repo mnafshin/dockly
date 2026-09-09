@@ -96,8 +96,11 @@ ENTRYPOINT ["java","org.springframework.boot.loader.launch.JarLauncher"]
 ---
 
 ## 4. Base images
-### Temurin / Corretto / Zulu
+### General-purpose JRE
 - glibc, fewest surprises
+- Eclipse Temurin (Adoptium)
+- Amazon Corretto
+- Azul Zulu
 ### Alpine (musl)
 - Smaller; watch DNS, JNI, agents
 ### Distroless / Chainguard
@@ -190,6 +193,9 @@ ENTRYPOINT ["java","-XX:SharedArchiveFile=application.jsa",\
 4. Runtime stage: copy `/javaruntime` + app only
 ### Tip
 - Train AOT cache / CDS with the **same** custom JRE you ship
+- Keep a **custom module list** for what `jdeps` misses
+  (reflection, `ServiceLoader`, JNI, optional JDBC/XML/security modules)
+- Merge: `jdeps` output ∪ curated baseline → feed `jlink`
 ### Example
 ```dockerfile
 FROM eclipse-temurin:25-jdk AS jre
@@ -222,28 +228,72 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 ### Identity & process
 - Non-root `USER` before ENTRYPOINT
 - Exec-form ENTRYPOINT (SIGTERM reaches JVM)
+  — not `ENTRYPOINT java -jar /app.jar`
+  — use `ENTRYPOINT ["java","-jar","/app.jar"]`
 - Drop Linux caps; no `--privileged`
+```yaml
+# Compose / K8s idea
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities: { drop: ["ALL"] }
+```
 ### Image surface
 - Runtime = **JRE**, never JDK
 - Prefer Distroless / Chainguard / slim bases
 - Multi-stage: no Maven, source, or build cache in final image
+```dockerfile
+# bad:  FROM eclipse-temurin:21-jdk
+# good: FROM eclipse-temurin:21-jre
+```
 ### Digest pin
 - Pin `FROM ...@sha256:…` in production
 - Avoid floating tags (`latest`, `21-jre`) for prod
+```dockerfile
+FROM eclipse-temurin:21-jre@sha256:abc123…
+```
 ### SBOM & provenance
 - Emit SBOM (Syft, Buildpacks, `docker buildx --sbom`)
 - Sign images (Cosign) + verify in deploy
 - Prefer attested builds (SLSA / provenance)
+```bash
+# SBOM
+syft ghcr.io/acme/demo:1.2.3 -o spdx-json > sbom.spdx.json
+docker buildx build --sbom=true --provenance=true -t demo:1.2.3 .
+
+# Sign + verify
+cosign sign --yes ghcr.io/acme/demo@sha256:…
+cosign verify ghcr.io/acme/demo@sha256:…
+
+# Provenance attestation (buildx / SLSA-style)
+cosign attest --predicate provenance.json \
+  --type slsaprovenance ghcr.io/acme/demo@sha256:…
+cosign verify-attestation --type slsaprovenance \
+  ghcr.io/acme/demo@sha256:…
+```
 ### Scan
 - CVE scan in CI (Trivy, Grype, registry scanners)
 - Fail the pipeline on high/critical
+```bash
+trivy image --exit-code 1 --severity HIGH,CRITICAL demo:1.2.3
+grype demo:1.2.3 --fail-on high
+```
 ### Secrets & FS
 - Read-only root FS (+ writable tmp if needed)
 - Never bake secrets into `ENV` / layers
 - Mount secrets at runtime (K8s secrets, CSI, Vault)
+```yaml
+# bad:  ENV DB_PASSWORD=s3cret
+# good: runtime mount / env from Secret
+volumeMounts: [{ name: db, mountPath: /run/secrets/db }]
+readOnlyRootFilesystem: true
+```
 ### JVM in containers
 - `-XX:MaxRAMPercentage=75.0`, not fixed `-Xmx`
-### Example
+```dockerfile
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+```
+### Example (Dockerfile)
 ```dockerfile
 FROM eclipse-temurin:21-jre@sha256:REPLACE_WITH_REAL_DIGEST
 WORKDIR /app
@@ -253,15 +303,6 @@ USER app
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 ```
-### Example: SBOM + sign (CI)
-```bash
-syft demo:prod -o spdx-json > sbom.spdx.json
-cosign sign --yes ghcr.io/acme/demo@sha256:…
-```
-
----
-
----
 
 ## 9. Kitchen sink (Java 25 JVM path)
 ### Combines in one Dockerfile
@@ -271,6 +312,8 @@ cosign sign --yes ghcr.io/acme/demo@sha256:…
 - Custom JRE (`jdeps` → `jlink`)
 - HotSpot **AOT cache** (no CDS)
 - Hardening: non-root, `MaxRAMPercentage`, slim base
+### Companion steps (CI — not in the Dockerfile)
+- SBOM, provenance, sign, scan
 ### Not in the same file
 - Buildpacks / Jib (replace the Dockerfile)
 - GraalVM Native (different runtime)
@@ -339,10 +382,17 @@ EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 ENTRYPOINT ["java","-XX:AOTCache=app.aot","-jar","application.jar"]
 ```
-### After build (CI)
+### Companion example (CI)
 ```bash
-syft demo:prod -o spdx-json > sbom.spdx.json
+docker buildx build --sbom=true --provenance=true \
+  -t ghcr.io/acme/demo:1.2.3 --push .
+
+syft ghcr.io/acme/demo:1.2.3 -o spdx-json > sbom.spdx.json
 cosign sign --yes ghcr.io/acme/demo@sha256:…
+cosign attest --predicate provenance.json \
+  --type slsaprovenance ghcr.io/acme/demo@sha256:…
+trivy image --exit-code 1 --severity HIGH,CRITICAL \
+  ghcr.io/acme/demo:1.2.3
 ```
 
 ---
